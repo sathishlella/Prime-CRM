@@ -270,6 +270,73 @@ body {
   }
 }
 
+/* ─── Responsive Layout ─────────────────────────────── */
+@media (max-width: 768px) {
+  /* Stat grids collapse to 2 cols on mobile */
+  .stat-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .stat-grid-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Table → card view on small screens */
+  .responsive-table thead {
+    display: none;
+  }
+  .responsive-table tbody tr {
+    display: block;
+    margin-bottom: 12px;
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.65);
+  }
+  .responsive-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border: none;
+    font-size: 13px;
+  }
+  .responsive-table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #94a3b8;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Pipeline bar stacks on mobile */
+  .pipeline-legend {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  /* Modal full-screen on mobile */
+  .modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-grid-4,
+  .stat-grid-5 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
 /* ─── Scrollbar ─────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 5px;

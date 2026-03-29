@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -109,19 +109,25 @@ function FloatingInput({
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const router   = useRouter();
-  const supabase = createClient();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const supabase     = createClient();
 
   const [mounted,     setMounted]     = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [serverError, setServerError] = useState("");
   const [success,     setSuccess]     = useState(false);
+  const [sessionMsg,  setSessionMsg]  = useState("");
 
   useEffect(() => {
+    // Show session expired banner if redirected from SessionGuard
+    if (searchParams.get("reason") === "session_expired") {
+      setSessionMsg("Your session expired. Please sign in again.");
+    }
     // Entrance animation
     const t = setTimeout(() => setMounted(true), 80);
     return () => clearTimeout(t);
-  }, []);
+  }, [searchParams]);
 
   const {
     register,
@@ -253,6 +259,24 @@ export default function LoginPage() {
             Sign in to your workspace
           </p>
         </div>
+
+        {/* Session expired banner */}
+        {sessionMsg && (
+          <div style={{
+            background: "rgba(251,191,36,0.15)",
+            border: "1px solid rgba(251,191,36,0.35)",
+            borderRadius: 10,
+            padding: "10px 14px",
+            marginBottom: 14,
+            fontSize: 13,
+            color: "#92400e",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}>
+            <span>⏱</span> {sessionMsg}
+          </div>
+        )}
 
         {/* Glass card */}
         <div
