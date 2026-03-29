@@ -352,7 +352,11 @@ export default function CounselorDashboardClient({
       if (newRow.student_id && !studentIds.includes(newRow.student_id)) return;
 
       if (eventType === "INSERT") {
-        setApps((prev) => [newRow, ...prev]);
+        // Prevent duplicates - check if already exists
+        setApps((prev) => {
+          if (prev.some((a) => a.id === newRow.id)) return prev;
+          return [newRow, ...prev];
+        });
       }
       if (eventType === "UPDATE") {
         setApps((prev) => prev.map((a) => (a.id === newRow.id ? newRow : a)));

@@ -1,15 +1,18 @@
-# ConsultPro CRM — Agent Guide
+# F1 Dream Jobs CRM — Agent Guide
 
-This document provides essential information for AI coding agents working on the ConsultPro CRM project.
+This file provides comprehensive guidance for AI coding agents working on the F1 Dream Jobs CRM codebase.
 
 ---
 
 ## Project Overview
 
-**ConsultPro CRM** is a student job consultancy platform for tracking job applications on behalf of students. It provides full transparency where students can see every application submitted by their counselors.
+**F1 Dream Jobs CRM** (also referred to as ConsultPro CRM) is a student job consultancy platform for tracking job applications on behalf of international students. It connects three user roles in a unified workflow:
+
+- **Counselors** find jobs and submit applications for students
+- **Students** log in to view their application status and history
+- **Admins** manage users and oversee all platform activity
 
 ### Business Flow
-
 ```
 COUNSELOR finds a job → adds Company, Role, JD, Resume, Link
     ↓
@@ -20,20 +23,12 @@ STUDENT logs in → sees every application with full details
 ADMIN sees everything — all students, all counselors, all data
 ```
 
-### User Roles
-
-| Role | Permissions |
-|------|-------------|
-| **Admin** | Full access to all data; can manage users, view analytics |
-| **Counselor** | Can add/update applications only for their assigned students |
-| **Student** | Read-only view of their own applications; cannot see internal notes |
-
 ---
 
 ## Technology Stack
 
-| Category | Technology |
-|----------|------------|
+| Layer | Technology |
+|-------|------------|
 | Framework | Next.js 14 (App Router) |
 | Language | TypeScript 5.5+ |
 | Database | Supabase (PostgreSQL) |
@@ -41,10 +36,10 @@ ADMIN sees everything — all students, all counselors, all data
 | Storage | Supabase Storage |
 | Realtime | Supabase Realtime |
 | Styling | Tailwind CSS 3.4 |
-| Animation | Framer Motion |
+| Animations | Framer Motion |
 | State Management | Zustand |
 | Forms | React Hook Form + Zod |
-| Font | Outfit (Google Fonts) |
+| Icons | SVG (inline) |
 
 ---
 
@@ -54,66 +49,57 @@ ADMIN sees everything — all students, all counselors, all data
 ├── src/
 │   ├── app/                          # Next.js App Router
 │   │   ├── (auth)/                   # Auth route group
-│   │   │   ├── layout.tsx
+│   │   │   ├── layout.tsx            # Auth layout (minimal)
 │   │   │   └── login/
-│   │   │       └── page.tsx          # Public login page
+│   │   │       └── page.tsx          # Login page with demo mode
 │   │   ├── (dashboard)/              # Dashboard route group (protected)
-│   │   │   ├── layout.tsx            # Shared dashboard shell
+│   │   │   ├── layout.tsx            # Dashboard shell with sidebar
 │   │   │   ├── admin/                # Admin portal
-│   │   │   │   ├── page.tsx
-│   │   │   │   ├── analytics/
-│   │   │   │   └── users/
 │   │   │   ├── counselor/            # Counselor portal
-│   │   │   │   ├── page.tsx
-│   │   │   │   └── students/
 │   │   │   └── student/              # Student portal
-│   │   │       ├── page.tsx
-│   │   │       └── documents/
+│   │   ├── globals.css               # Global styles + design tokens
 │   │   ├── layout.tsx                # Root layout
-│   │   ├── page.tsx                  # Root redirect to /login
-│   │   └── globals.css               # Global styles + Tailwind
+│   │   └── page.tsx                  # Root redirect
 │   ├── components/                   # Shared UI components
-│   │   ├── Avatar.tsx
-│   │   ├── BlobBackground.tsx
-│   │   ├── DashboardShell.tsx
-│   │   ├── DataTable.tsx
-│   │   ├── FileUpload.tsx
-│   │   ├── GlassCard.tsx             # Core glass morphism card
-│   │   ├── Modal.tsx
-│   │   ├── NotificationBell.tsx
-│   │   ├── OfflineBanner.tsx
-│   │   ├── SessionGuard.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── Skeleton.tsx
-│   │   ├── StatCard.tsx
-│   │   ├── StatusBadge.tsx
-│   │   ├── Toast.tsx
-│   │   └── TopBar.tsx
+│   │   ├── DashboardShell.tsx        # Layout wrapper with blobs
+│   │   ├── Sidebar.tsx               # Navigation sidebar
+│   │   ├── TopBar.tsx                # Header with user menu
+│   │   ├── GlassCard.tsx             # Glass morphism card
+│   │   ├── StatusBadge.tsx           # Application status badge
+│   │   ├── DataTable.tsx             # Table component
+│   │   ├── Modal.tsx                 # Dialog modal
+│   │   ├── FileUpload.tsx            # Document upload
+│   │   ├── NotificationBell.tsx      # Notifications UI
+│   │   ├── Toast.tsx                 # Toast notifications
+│   │   └── ...
 │   └── lib/                          # Utilities and business logic
-│       ├── api/                      # Data layer
-│       │   ├── applications.ts
-│       │   ├── documents.ts
-│       │   ├── notifications.ts
-│       │   └── students.ts
-│       ├── hooks/                    # Custom React hooks
-│       │   ├── useAuth.ts            # Authentication + idle timeout
-│       │   ├── useNotifications.ts
-│       │   └── useRealtime.ts
-│       ├── stores/                   # Zustand stores
-│       │   ├── appStore.ts
-│       │   ├── authStore.ts
-│       │   └── uiStore.ts
-│       └── supabase/                 # Supabase clients
-│           ├── client.ts             # Browser client
-│           ├── database.types.ts     # TypeScript types
-│           └── server.ts             # Server Component client
+│       ├── supabase/
+│       │   ├── client.ts             # Browser Supabase client
+│       │   ├── server.ts             # Server Component client
+│       │   └── database.types.ts     # TypeScript DB types
+│       ├── hooks/
+│       │   ├── useAuth.ts            # Auth hook with idle timeout
+│       │   ├── useRealtime.ts        # Realtime subscriptions
+│       │   └── useNotifications.ts   # Notifications logic
+│       ├── stores/
+│       │   ├── authStore.ts          # Zustand auth state
+│       │   ├── appStore.ts           # Application state
+│       │   └── uiStore.ts            # UI state
+│       ├── api/
+│       │   ├── applications.ts       # Application CRUD
+│       │   ├── students.ts           # Student CRUD
+│       │   ├── documents.ts          # Document CRUD
+│       │   ├── notifications.ts      # Notifications API
+│       │   └── mockData.ts           # Demo mode data
+│       └── actions/
+│           └── createUser.ts         # Server action for user creation
 ├── supabase/
-│   └── schema.sql                    # Complete database schema
-├── middleware.ts                     # Auth middleware + role guards
-├── tailwind.config.ts                # Tailwind + design tokens
-├── postcss.config.js
+│   ├── schema.sql                    # Complete DB schema
+│   └── config.toml                   # Supabase CLI config
+├── middleware.ts                     # Auth + role-based routing
+├── tailwind.config.ts                # Tailwind customization
 ├── next.config.js                    # Next.js config + security headers
-└── package.json
+└── package.json                      # Dependencies
 ```
 
 ---
@@ -124,19 +110,19 @@ ADMIN sees everything — all students, all counselors, all data
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (localhost:3000)
 npm run dev
 
-# Build for production
+# Production build
 npm run build
 
 # Start production server
-npm start
+npm run start
 
 # Run ESLint
 npm run lint
 
-# Type checking (without emitting)
+# TypeScript type check (no emit)
 npm run type-check
 ```
 
@@ -144,68 +130,60 @@ npm run type-check
 
 ## Environment Variables
 
-Create `.env.local` based on `.env.local.example`:
+Create `.env.local` from `.env.local.example`:
 
 ```bash
-# Supabase — Found in: Supabase Dashboard → Settings → API
+# ─── Supabase ────────────────────────────────────────────────────────────────
+# Found in: Supabase Dashboard → Settings → API
+
+# Public — safe to expose to the browser
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here  # Server-only, NEVER expose to client
 
-# App
+# Secret — NEVER expose this to the client bundle (server-only)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# ─── App ─────────────────────────────────────────────────────────────────────
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
 
-**Important:** `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS and must only be used in server-side code.
+# ─── Demo Mode (optional) ────────────────────────────────────────────────────
+# Set to "true" to run without Supabase (uses mock data)
+NEXT_PUBLIC_DEMO_MODE=true
+```
 
 ---
 
-## Design System
+## Authentication & Authorization
 
-### Glass Morphism (Primary Visual Language)
+### Role-Based Access Control
 
-```tsx
-// Core glass effect — use the GlassCard component
-<GlassCard hoverable padding="20px">
-  Content here
-</GlassCard>
+The app has three roles with a strict hierarchy:
 
-// Or use CSS utility classes
-glass       → background: rgba(255,255,255,0.5), backdrop-blur(20px)
-glass-hover → glass + hover lift effect
-```
+| Role | Permissions |
+|------|-------------|
+| **Admin** | Full access to all data and users; bypasses RLS with service_role key |
+| **Counselor** | Can add/update applications only for assigned students; read-only on their students |
+| **Student** | Read-only view of own applications; cannot see internal notes |
 
-### Color Palette
+### Demo Mode Credentials
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `brand-500` | `#3b82f6` | Primary blue |
-| `mint-500` | `#10b981` | Accent green |
-| `status.applied` | `#3b82f6` | Applied status |
-| `status.in_progress` | `#f59e0b` | In Progress status |
-| `status.interview` | `#10b981` | Interview status |
-| `status.rejected` | `#ef4444` | Rejected status |
-| `status.offered` | `#8b5cf6` | Offered status |
-| `surface.DEFAULT` | `#f8faff` | Page background start |
+When `NEXT_PUBLIC_DEMO_MODE=true`, use these credentials:
 
-### Animations
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@consultpro.com | demo123 |
+| Counselor | priya@consultpro.com | demo123 |
+| Student | sarah@student.com | demo123 |
 
-| Name | Duration | Description |
-|------|----------|-------------|
-| `fadeUp` | 0.45s | Entrance animation (opacity 0→1, Y 14px→0) |
-| `blob-a/b/c` | 17-25s | Background blob morphing (infinite) |
-| `float` | 4s | Gentle floating effect |
-| `shake` | 0.4s | Error state feedback |
+### Idle Timeout
 
-### Easing
-
-Always use `cubic-bezier(.4, 0, .2, 1)` — available as CSS var `--ease` or Tailwind `ease-smooth`.
+Sessions automatically expire after **30 minutes of inactivity**. The `useAuth` hook tracks user activity (mousemove, keydown, etc.) and signs out idle users.
 
 ---
 
 ## Database Schema
 
-### Core Tables
+Core tables (see `supabase/schema.sql` for complete schema):
 
 | Table | Purpose |
 |-------|---------|
@@ -227,178 +205,176 @@ type DocumentType = "resume" | "cover_letter" | "jd" | "other";
 
 ### Row Level Security (RLS)
 
-**RLS is critical** — it is the sole data isolation mechanism. Students, counselors, and admins receive different data from the same queries based on their JWT role.
-
-Key policies:
-- Students can only read their own records
-- Counselors can only access their assigned students
-- Admins have full access (using `service_role` key for server operations)
-
-### Database Triggers
-
-1. **Auto-update `updated_at`** — on profiles, students, applications
-2. **Status change → activity_log + notification** — notifies students of updates
-3. **New application → activity_log + notification** — notifies students of new submissions
-4. **New auth user → auto-create profile** — maintains profile sync
+RLS is **critical** — it is the sole data isolation mechanism between roles. Students, counselors, and admins receive different data from the same queries based on their JWT role. Admin operations use `service_role` key (server-only, never exposed to client).
 
 ---
 
-## Authentication & Authorization
+## Design System
 
-### Middleware (`middleware.ts`)
+### Visual Language
 
-- Protects all routes except `/login`
-- Redirects unauthenticated users to `/login`
-- Redirects authenticated users from `/login` to their role-based home
-- Enforces cross-role access guards (students cannot access `/admin`, etc.)
+- **Glass morphism**: `background: rgba(255,255,255,0.78)`, `backdropFilter: blur(40px)`, rounded corners (20px)
+- **Ambient blobs**: 3 animated radial-gradient blobs (blue/mint/violet) at low opacity (3-7%)
+- **Easing**: Always `cubic-bezier(.4,0,.2,1)` (stored as `var(--ease)`)
+- **Font**: `'Inter'` (Google Fonts), weights 300-800
 
-### useAuth Hook (`src/lib/hooks/useAuth.ts`)
+### Status Colors
 
-```typescript
-const { user, profile, role, isLoading, signIn, signOut } = useAuth();
-```
+| Status | Color | Hex |
+|--------|-------|-----|
+| applied | Blue | `#3b82f6` |
+| in_progress | Amber | `#f59e0b` |
+| interview | Green | `#10b981` |
+| rejected | Red | `#ef4444` |
+| offered | Violet | `#8b5cf6` |
 
-Features:
-- 30-minute idle timeout (auto-logout)
-- Session persistence via Supabase
-- Role-based navigation after login
+### Tailwind Customizations
 
-### Role-Based Homes
+See `tailwind.config.ts` for:
+- Brand color palette (`brand-50` to `brand-900`)
+- Mint accent colors
+- Status color mappings
+- Custom animations (blob-a, blob-b, blob-c, fade-up, shake)
+- Box shadows (glass, glass-hover, brand)
 
-```typescript
-const ROLE_HOME = {
-  admin:     "/admin",
-  counselor: "/counselor",
-  student:   "/student",
-};
+### CSS Classes (globals.css)
+
+```css
+.glass           /* Glass morphism card */
+.glass-hover     /* Glass card with hover effect */
+.card            /* White card with subtle shadow */
+.card-hover      /* White card with hover lift */
+.btn-brand       /* Primary action button */
+.btn-ghost       /* Secondary button */
+.input-field     /* Form input */
+.status-badge    /* Status indicator */
+.sidebar-item    /* Navigation item */
+.skeleton        /* Loading shimmer */
 ```
 
 ---
 
-## Supabase Clients
+## Key Patterns
 
-### Browser Client (`src/lib/supabase/client.ts`)
+### Supabase Client Usage
 
 ```typescript
+// Browser/client component
 import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
-```
 
-Use in: Client Components, hooks, browser-only code
-
-### Server Client (`src/lib/supabase/server.ts`)
-
-```typescript
-import { createServerClient, createAdminClient } from "@/lib/supabase/server";
-
-// Regular server operations (respects RLS)
+// Server Component
+import { createServerClient } from "@/lib/supabase/server";
 const supabase = createServerClient();
 
-// Admin operations (bypasses RLS) — NEVER expose to client
+// Admin operations (bypass RLS)
+import { createAdminClient } from "@/lib/supabase/server";
 const admin = createAdminClient();
 ```
 
-Use in: Server Components, API routes, server actions
+### API Functions with Demo Mode
+
+All API functions in `src/lib/api/` support demo mode:
+
+```typescript
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+export async function getApplications() {
+  if (DEMO_MODE) {
+    return { data: MOCK_APPLICATIONS, error: null };
+  }
+  // Real Supabase query...
+}
+```
+
+### Form Handling
+
+```typescript
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: zodResolver(schema),
+});
+```
+
+### Protected Routes
+
+Routes under `(dashboard)/` are automatically protected by:
+1. `middleware.ts` — redirects unauthenticated users to `/login`
+2. `middleware.ts` — redirects users to their role-appropriate home
+3. Dashboard layout (`(dashboard)/layout.tsx`) — server-side session check
 
 ---
 
 ## Realtime Features
 
-Supabase Realtime is enabled on:
-- `applications` — live status updates
-- `notifications` — instant notification delivery
+Status changes trigger real-time updates:
 
-Flow: Status change by counselor → DB trigger creates notification → Realtime broadcasts → student dashboard updates live (no refresh).
+1. Counselor updates application status
+2. DB trigger creates `activity_log` entry + `notification` record
+3. Supabase Realtime broadcasts change
+4. Student dashboard updates live (no page refresh)
 
----
-
-## Code Style Guidelines
-
-### TypeScript
-
-- Strict mode enabled
-- Use `type` for type aliases, `interface` for object shapes
-- Export types from `database.types.ts` for DB entities
-
-### Component Structure
-
-```typescript
-"use client"; // If needed
-
-import { useState } from "react"; // React imports first
-import { motion } from "framer-motion"; // Third-party
-import { createClient } from "@/lib/supabase/client"; // Absolute imports (@/*)
-import GlassCard from "@/components/GlassCard"; // Components
-
-// Types
-interface Props { ... }
-
-// Component
-export default function ComponentName({ prop }: Props) {
-  // Implementation
-}
-```
-
-### Naming Conventions
-
-- Components: PascalCase (`GlassCard.tsx`)
-- Hooks: camelCase with `use` prefix (`useAuth.ts`)
-- API functions: camelCase (`createApplication`)
-- Stores: camelCase with `use` prefix (`useAuthStore`)
-
-### Styling
-
-- Prefer Tailwind utility classes for simple styling
-- Use inline `style` prop for dynamic glass morphism values
-- Use `globals.css` utility classes (`.glass`, `.btn-brand`) for consistency
-
----
-
-## Testing Strategy
-
-Currently, the project does not have automated tests configured. When adding tests:
-
-1. **Unit Tests** — Test utility functions, hooks with `@testing-library/react`
-2. **Integration Tests** — Test API layer with mocked Supabase
-3. **E2E Tests** — Use Playwright for critical user flows (login, add application, status change)
+Tables enabled for Realtime: `applications`, `notifications`
 
 ---
 
 ## Security Considerations
 
-### Critical Rules
-
-1. **NEVER** expose `SUPABASE_SERVICE_ROLE_KEY` to the client
-2. **ALWAYS** use `createAdminClient()` only in server-side code
-3. **ALWAYS** verify user permissions before database operations
-4. **NEVER** trust client input — validate with Zod schemas
-
-### Security Headers (Configured in `next.config.js`)
+### Headers (next.config.js)
 
 - `X-Frame-Options: DENY`
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
-- Content Security Policy configured for Supabase domains
+- Content Security Policy configured for Supabase resources
+
+### Important Rules
+
+1. **Never** expose `SUPABASE_SERVICE_ROLE_KEY` to client
+2. **Always** use RLS policies for data access control
+3. **Validate** all inputs with Zod schemas
+4. **Sanitize** user-generated content before display
+5. **Check** role permissions in middleware for sensitive routes
+
+---
+
+## Testing Strategy
+
+Currently, the project uses:
+- **TypeScript** for compile-time type safety (`npm run type-check`)
+- **ESLint** for code quality (`npm run lint`)
+- **Demo mode** for manual testing without Supabase setup
+
+### Manual Testing Checklist
+
+- [ ] Login with each role (admin, counselor, student)
+- [ ] Verify role-based route protection
+- [ ] Test idle timeout (30 min)
+- [ ] Verify demo mode works without Supabase
+- [ ] Test real-time updates (requires Supabase)
 
 ---
 
 ## Deployment
 
-### Platform
+### Vercel (Recommended)
 
-Recommended: **Vercel**
+1. Connect GitHub repo to Vercel
+2. Add environment variables in Vercel Dashboard
+3. Deploy
 
-### Environment Setup
+### Environment Requirements
 
-1. Set all environment variables in Vercel Dashboard
-2. Ensure `SUPABASE_SERVICE_ROLE_KEY` is only in server environment
-3. Configure custom domain if needed
-
-### Database Setup
-
-1. Run `supabase/schema.sql` in Supabase SQL Editor
-2. Enable Realtime on `applications` and `notifications` tables
-3. Create Storage bucket `documents` (private, 10MB limit)
+- Node.js 18+
+- Environment variables configured
+- Supabase project with schema applied (`supabase/schema.sql`)
 
 ---
 
@@ -406,10 +382,10 @@ Recommended: **Vercel**
 
 | File | Purpose |
 |------|---------|
-| `CLAUDE.md` | Additional context for Claude Code |
-| `ConsultPro-CRM-Prompts.md` | 11 sequential build prompts |
-| `consultpro-crm-sample.jsx` | Standalone demo (visual reference) |
-| `supabase/schema.sql` | Complete database schema |
+| `CLAUDE.md` | High-level project overview and build sequence |
+| `ConsultPro-CRM-Prompts.md` | 11 sequential prompts for production implementation |
+| `consultpro-crm-sample.jsx` | Standalone React demo (no build step) |
+| `supabase/schema.sql` | Complete database schema with RLS policies |
 
 ---
 
@@ -417,34 +393,28 @@ Recommended: **Vercel**
 
 ### Adding a New API Function
 
-```typescript
-// src/lib/api/feature.ts
-"use client";
-
-import { createClient } from "@/lib/supabase/client";
-
-const supabase = () => createClient();
-
-export async function createFeature(data: FeatureInput) {
-  const { data: result, error } = await supabase()
-    .from("table")
-    .insert(data)
-    .select()
-    .single();
-  
-  return { data: result, error };
-}
-```
+1. Add to appropriate file in `src/lib/api/`
+2. Support demo mode with `MOCK_DATA` fallback
+3. Use TypeScript types from `database.types.ts`
+4. Return `{ data, error }` shape
 
 ### Adding a New Page
 
-1. Create directory under appropriate route group
-2. Add `page.tsx` with Server Component fetching data
-3. Add `*Client.tsx` for interactive UI if needed
-4. Follow existing role-based guards pattern
+1. Create folder in appropriate role directory (`admin/`, `counselor/`, `student/`)
+2. Use `loading.tsx` and `error.tsx` for UX
+3. Create `*Client.tsx` for client components
+4. Keep server components as `page.tsx`
 
-### Adding a Database Migration
+### Adding a New Component
 
-1. Add SQL to `supabase/schema.sql` using `IF NOT EXISTS`
-2. Update `database.types.ts` with new types
-3. Apply to Supabase via SQL Editor
+1. Create in `src/components/`
+2. Use Tailwind classes from design system
+3. Accept `className` prop for composition
+4. Export as default or named export
+
+### Modifying the Database Schema
+
+1. Edit `supabase/schema.sql`
+2. Apply changes in Supabase SQL Editor
+3. Update `src/lib/supabase/database.types.ts`
+4. Regenerate types: `npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/lib/supabase/database.types.ts`
