@@ -50,7 +50,32 @@ export async function createUserAction(
     return { error: "Password must be at least 8 characters." };
   }
 
-  // ── 3. Create auth user via service_role (no email confirmation needed) ────
+  // ── 3. Check for duplicates ────────────────────────────────────────────────
+  const admin = createAdminClient();
+  
+  // Check for duplicate email (case-insensitive)
+  const { data: existingEmail } = await admin
+    .from("profiles")
+    .select("id, email")
+    .ilike("email", email)
+    .maybeSingle();
+  
+  if (existingEmail) {
+    return { error: `A user with email "${email}" already exists.` };
+  }
+  
+  // Check for duplicate full name (case-insensitive, trimmed)
+  const { data: existingName } = await admin
+    .from("profiles")
+    .select("id, full_name")
+    .ilike("full_name", full_name.trim())
+    .maybeSingle();
+  
+  if (existingName) {
+    return { error: `A user with name "${full_name}" already exists.` };
+  }
+
+  // ── 4. Create auth user via service_role (no email confirmation needed) ────
   const adminAuth = createSupabaseAdmin(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -69,8 +94,7 @@ export async function createUserAction(
 
   const userId = authData.user.id;
 
-  // ── 4. Upsert profile (trigger may have already inserted it) ───────────────
-  const admin = createAdminClient();
+  // ── 5. Upsert profile (trigger may have already inserted it) ───────────────
   const { error: profileError } = await admin
     .from("profiles")
     .upsert({
@@ -89,7 +113,7 @@ export async function createUserAction(
     return { error: `Profile creation failed: ${profileError.message}` };
   }
 
-  // ── 5. If student, create student record ───────────────────────────────────
+  // ── 6. If student, create student record ───────────────────────────────────
   if (role === "student") {
     const { error: studentError } = await admin.from("students").insert({
       profile_id:            userId,
