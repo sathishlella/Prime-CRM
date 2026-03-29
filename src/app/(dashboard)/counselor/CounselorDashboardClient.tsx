@@ -12,6 +12,7 @@ import Modal from "@/components/Modal";
 import { useRealtime } from "@/lib/hooks/useRealtime";
 import { useUIStore } from "@/lib/stores/uiStore";
 import { createApplication, updateApplicationStatus } from "@/lib/api/applications";
+import { getStudentResumes } from "@/lib/api/documents";
 import type { ApplicationStatus } from "@/lib/supabase/database.types";
 import type { CounselorStudent, CounselorApplication } from "./page";
 
@@ -111,12 +112,27 @@ function AddApplicationModal({
   onAdded:  (app: CounselorApplication) => void;
 }) {
   const { addToast } = useUIStore();
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [resumes,     setResumes]     = useState<{ id: string; file_name: string }[]>([]);
+  const [loadingRes,  setLoadingRes]  = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<AddAppForm>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddAppForm>({
     resolver: zodResolver(addAppSchema),
     defaultValues: { job_link: "", resume_used: "", job_description: "", notes: "" },
   });
+
+  const watchedStudent = watch("student_id");
+
+  // When student changes, fetch their uploaded resumes
+  async function onStudentChange(studentId: string) {
+    setValue("student_id", studentId);
+    setValue("resume_used", "");
+    if (!studentId) { setResumes([]); return; }
+    setLoadingRes(true);
+    const { data } = await getStudentResumes(studentId);
+    setResumes(data as { id: string; file_name: string }[]);
+    setLoadingRes(false);
+  }
 
   async function onSubmit(data: AddAppForm) {
     setSubmitting(true);
@@ -180,7 +196,8 @@ function AddApplicationModal({
         {/* Student */}
         <label style={labelStyle}>Student *</label>
         <select
-          {...register("student_id")}
+          value={watchedStudent}
+          onChange={(e) => onStudentChange(e.target.value)}
           style={{ ...inputStyle, cursor: "pointer" }}
           onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
           onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
@@ -220,12 +237,25 @@ function AddApplicationModal({
         />
         {errors.job_link && <p style={errorStyle}>{errors.job_link.message}</p>}
 
-        {/* Resume */}
-        <label style={labelStyle}>Resume Filename</label>
-        <input placeholder="sarah_resume_v3.pdf" {...register("resume_used")} style={inputStyle}
-          onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
-        />
+        {/* Resume — dropdown if student has uploads, text input otherwise */}
+        <label style={labelStyle}>
+          Resume {loadingRes && <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>loading…</span>}
+        </label>
+        {resumes.length > 0 ? (
+          <select {...register("resume_used")} style={{ ...inputStyle, cursor: "pointer" }}
+            onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
+            onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
+          >
+            <option value="">Select uploaded resume…</option>
+            {resumes.map((r) => <option key={r.id} value={r.file_name}>{r.file_name}</option>)}
+            <option value="__manual__">Enter manually…</option>
+          </select>
+        ) : (
+          <input placeholder="sarah_resume_v3.pdf" {...register("resume_used")} style={inputStyle}
+            onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
+            onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
+          />
+        )}
 
         {/* JD */}
         <label style={labelStyle}>Job Description</label>
