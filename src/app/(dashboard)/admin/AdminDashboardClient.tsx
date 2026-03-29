@@ -476,15 +476,15 @@ export default function AdminDashboardClient({
         style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}
       >
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: "0 0 3px" }}>Admin Overview 👑</h2>
-          <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>Full system visibility across all students and counselors.</p>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#0A0F1E", margin: "0 0 3px", letterSpacing: "-0.5px" }}>Admin Overview</h2>
+          <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0, letterSpacing: "-0.01em" }}>Full system visibility across all students and counselors.</p>
         </div>
         <button onClick={() => router.push("/admin/create-user")}
-          style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #3b82f6, #10b981)", color: "#fff", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 7, boxShadow: "0 4px 14px rgba(59,130,246,0.28)", transition: "all 0.25s", whiteSpace: "nowrap" }}
-          onMouseEnter={(e) => { (e.currentTarget).style.transform = "translateY(-2px)"; (e.currentTarget).style.boxShadow = "0 8px 24px rgba(59,130,246,0.35)"; }}
-          onMouseLeave={(e) => { (e.currentTarget).style.transform = "translateY(0)";    (e.currentTarget).style.boxShadow = "0 4px 14px rgba(59,130,246,0.28)"; }}
+          style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "#0A6EBD", color: "#fff", fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 7, boxShadow: "0 4px 14px rgba(10,110,189,0.25)", transition: "all 0.25s", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}
+          onMouseEnter={(e) => { (e.currentTarget).style.background = "#0857A0"; (e.currentTarget).style.transform = "translateY(-1px)"; (e.currentTarget).style.boxShadow = "0 8px 24px rgba(10,110,189,0.3)"; }}
+          onMouseLeave={(e) => { (e.currentTarget).style.background = "#0A6EBD"; (e.currentTarget).style.transform = "translateY(0)"; (e.currentTarget).style.boxShadow = "0 4px 14px rgba(10,110,189,0.25)"; }}
         >
-          <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> New User
+          <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 400 }}>+</span> New User
         </button>
       </motion.div>
 
@@ -501,9 +501,9 @@ export default function AdminDashboardClient({
 
       {/* ── Tabs ── */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {([["overview", "👥 Students & Team"], ["users", "⚙️ User Management"]] as [Tab, string][]).map(([key, label]) => (
+        {([["overview", "Students & Team"], ["users", "User Management"]] as [Tab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
-            style={{ padding: "8px 18px", borderRadius: 10, border: "none", fontFamily: "inherit", fontSize: 12.5, fontWeight: 650, cursor: "pointer", transition: "all 0.22s", background: tab === key ? "linear-gradient(135deg,#3b82f6,#10b981)" : "rgba(255,255,255,0.45)", color: tab === key ? "#fff" : "#64748b", boxShadow: tab === key ? "0 3px 12px rgba(59,130,246,0.2)" : "none" }}
+            style={{ padding: "8px 18px", borderRadius: 10, border: tab === key ? "none" : "1px solid rgba(0,0,0,0.07)", fontFamily: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.22s", background: tab === key ? "#0A0F1E" : "#FFFFFF", color: tab === key ? "#fff" : "#6B7280", letterSpacing: "-0.01em" }}
           >{label}</button>
         ))}
       </div>
@@ -642,13 +642,7 @@ export default function AdminDashboardClient({
         )}
       </AnimatePresence>
 
-      {/* Create User Modal */}
-      <CreateUserModal
-        isOpen={createModal}
-        onClose={() => setCreate(false)}
-        counselors={counselors}
-        onCreated={(p) => setProfiles((prev) => [...prev, p])}
-      />
+      {/* Create user now handled at /admin/create-user */}
     </div>
   );
 }

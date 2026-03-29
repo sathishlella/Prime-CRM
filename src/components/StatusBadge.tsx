@@ -2,19 +2,19 @@ import type { ApplicationStatus } from "@/lib/supabase/database.types";
 
 const STATUS_MAP: Record<
   ApplicationStatus,
-  { label: string; color: string; bg: string; icon: string }
+  { label: string; color: string; bg: string; dot: string }
 > = {
-  applied:     { label: "Applied",     color: "#3b82f6", bg: "rgba(59,130,246,0.08)",   icon: "📨" },
-  in_progress: { label: "In Progress", color: "#f59e0b", bg: "rgba(245,158,11,0.08)",   icon: "⚙️" },
-  interview:   { label: "Interview",   color: "#10b981", bg: "rgba(16,185,129,0.08)",   icon: "🎯" },
-  rejected:    { label: "Rejected",    color: "#ef4444", bg: "rgba(239,68,68,0.06)",    icon: "✕"  },
-  offered:     { label: "Offered",     color: "#8b5cf6", bg: "rgba(139,92,246,0.08)",   icon: "🎉" },
+  applied:     { label: "Applied",     color: "#2563EB", bg: "rgba(37,99,235,0.08)",   dot: "#2563EB" },
+  in_progress: { label: "In Progress", color: "#D97706", bg: "rgba(217,119,6,0.08)",   dot: "#D97706" },
+  interview:   { label: "Interview",   color: "#059669", bg: "rgba(5,150,105,0.08)",   dot: "#059669" },
+  rejected:    { label: "Rejected",    color: "#DC2626", bg: "rgba(220,38,38,0.07)",   dot: "#DC2626" },
+  offered:     { label: "Offered",     color: "#7C3AED", bg: "rgba(124,58,237,0.08)",  dot: "#7C3AED" },
 };
 
 interface StatusBadgeProps {
-  status:    ApplicationStatus;
-  onClick?:  () => void;
-  size?:     "sm" | "md";
+  status:   ApplicationStatus;
+  onClick?: () => void;
+  size?:    "sm" | "md";
 }
 
 export default function StatusBadge({ status, onClick, size = "md" }: StatusBadgeProps) {
@@ -27,37 +27,47 @@ export default function StatusBadge({ status, onClick, size = "md" }: StatusBadg
     <span
       onClick={onClick}
       style={{
-        display:        "inline-flex",
-        alignItems:     "center",
-        gap:            4,
-        fontSize:       isSmall ? 10 : 11,
-        fontWeight:     650,
-        padding:        isSmall ? "3px 8px" : "4px 10px",
-        borderRadius:   8,
-        background:     s.bg,
-        color:          s.color,
-        letterSpacing:  0.3,
-        whiteSpace:     "nowrap",
-        cursor:         onClick ? "pointer" : "default",
-        border:         `1px solid ${s.color}20`,
-        transition:     "all 0.2s cubic-bezier(.4,0,.2,1)",
-        userSelect:     "none",
+        display:       "inline-flex",
+        alignItems:    "center",
+        gap:           5,
+        fontSize:      isSmall ? 10.5 : 11.5,
+        fontWeight:    600,
+        padding:       isSmall ? "3px 8px" : "4px 10px",
+        borderRadius:  7,
+        background:    s.bg,
+        color:         s.color,
+        letterSpacing: "0.05px",
+        whiteSpace:    "nowrap",
+        cursor:        onClick ? "pointer" : "default",
+        border:        `1px solid ${s.color}22`,
+        transition:    "all 0.2s cubic-bezier(.4,0,.2,1)",
+        userSelect:    "none",
       }}
       onMouseEnter={(e) => {
         if (onClick) {
-          (e.currentTarget as HTMLSpanElement).style.filter = "brightness(1.08)";
-          (e.currentTarget as HTMLSpanElement).style.transform = "scale(1.03)";
+          (e.currentTarget as HTMLSpanElement).style.filter    = "brightness(1.06)";
+          (e.currentTarget as HTMLSpanElement).style.transform = "scale(1.02)";
         }
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLSpanElement).style.filter = "";
+        (e.currentTarget as HTMLSpanElement).style.filter    = "";
         (e.currentTarget as HTMLSpanElement).style.transform = "";
       }}
     >
-      <span style={{ fontSize: isSmall ? 9 : 10 }}>{s.icon}</span>
+      {/* Status dot */}
+      <span style={{
+        width:        isSmall ? 5 : 6,
+        height:       isSmall ? 5 : 6,
+        borderRadius: "50%",
+        background:   s.dot,
+        flexShrink:   0,
+        display:      "inline-block",
+      }} />
       {s.label}
       {onClick && (
-        <span style={{ fontSize: 8, marginLeft: 2, opacity: 0.6 }}>▼</span>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ marginLeft: 1, opacity: 0.5 }}>
+          <path d="M2 3l2 2 2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       )}
     </span>
   );

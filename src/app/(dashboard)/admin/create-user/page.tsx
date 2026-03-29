@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import CreateUserClient from "./CreateUserClient";
 
-export const metadata = { title: "Create User | ConsultPro CRM" };
+export const metadata = { title: "Create Account | F1 Dream Jobs" };
 
 export default async function CreateUserPage() {
   const supabase = createServerClient();

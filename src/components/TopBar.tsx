@@ -16,9 +16,41 @@ interface Props {
   onMenuClick?: () => void;
 }
 
+// ─── Hamburger SVG ────────────────────────────────────────────────────────────
+function IconMenu() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M2 5h14M2 9h14M2 13h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ─── Sign-out SVG ─────────────────────────────────────────────────────────────
+function IconSignOut() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M5 2H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M9 10l3-3-3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 7H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+const ROLE_COLOR: Record<string, string> = {
+  admin:     "#7C3AED",
+  counselor: "#0A6EBD",
+  student:   "#059669",
+};
+
+const ROLE_BG: Record<string, string> = {
+  admin:     "rgba(124,58,237,0.08)",
+  counselor: "rgba(10,110,189,0.08)",
+  student:   "rgba(5,150,105,0.08)",
+};
+
 export default function TopBar({ user, onMenuClick }: Props) {
-  const router      = useRouter();
-  const supabase    = createClient();
+  const router   = useRouter();
+  const supabase = createClient();
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
@@ -35,12 +67,9 @@ export default function TopBar({ user, onMenuClick }: Props) {
     .join("")
     .toUpperCase();
 
-  const roleColor: Record<string, string> = {
-    admin:     "#8b5cf6",
-    counselor: "#3b82f6",
-    student:   "#10b981",
-  };
-  const color = roleColor[user.role] ?? "#3b82f6";
+  const color   = ROLE_COLOR[user.role] ?? "#0A6EBD";
+  const roleBg  = ROLE_BG[user.role]   ?? "rgba(10,110,189,0.08)";
+  const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
 
   return (
     <header
@@ -48,57 +77,139 @@ export default function TopBar({ user, onMenuClick }: Props) {
         position:             "sticky",
         top:                  0,
         zIndex:               20,
-        background:           "rgba(248,250,255,0.72)",
-        backdropFilter:       "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderBottom:         "1px solid rgba(255,255,255,0.5)",
-        padding:              "10px 24px",
+        background:           "rgba(247,249,252,0.88)",
+        backdropFilter:       "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderBottom:         "1px solid rgba(0,0,0,0.06)",
+        padding:              "0 24px",
+        height:               56,
         display:              "flex",
         alignItems:           "center",
         justifyContent:       "space-between",
         gap:                  12,
       }}
     >
-      {/* Left: hamburger (mobile) */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Left */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#64748b", padding: "2px 4px", display: "flex", alignItems: "center" }}
+            style={{
+              background: "none",
+              border:     "none",
+              cursor:     "pointer",
+              color:      "#6B7280",
+              padding:    "6px",
+              borderRadius: 8,
+              display:    "flex",
+              alignItems: "center",
+              transition: "all 0.18s",
+            }}
             aria-label="Open menu"
+            onMouseEnter={(e) => { (e.currentTarget).style.background = "#F3F4F6"; (e.currentTarget).style.color = "#0A0F1E"; }}
+            onMouseLeave={(e) => { (e.currentTarget).style.background = "none";    (e.currentTarget).style.color = "#6B7280"; }}
           >
-            ☰
+            <IconMenu />
           </button>
         )}
-        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg, #3b82f6, #10b981)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(59,130,246,0.2)" }}>
-          <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>CP</span>
+
+        {/* F1 logo mark - visible on mobile only when sidebar hidden */}
+        <div style={{
+          width:          32,
+          height:         32,
+          borderRadius:   10,
+          background:     "linear-gradient(145deg, #0A0F1E, #1a2744)",
+          display:        "flex",
+          alignItems:     "center",
+          justifyContent: "center",
+          boxShadow:      "0 1px 4px rgba(10,15,30,0.15)",
+          overflow:       "hidden",
+          position:       "relative",
+        }}>
+          <div style={{
+            position: "absolute", top: -3, right: -3,
+            width: 14, height: 14,
+            background: "rgba(10,110,189,0.7)",
+            borderRadius: "50%",
+            filter: "blur(5px)",
+          }} />
+          <span style={{ color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "-0.3px", position: "relative", zIndex: 1 }}>F1</span>
         </div>
       </div>
 
-      {/* Right: bell + user + logout */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Right */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 
-        {/* Notification Bell */}
         <NotificationBell userId={user.id} />
 
         {/* User pill */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 10px 5px 5px", borderRadius: 12, background: "rgba(255,255,255,0.5)", border: "1px solid rgba(0,0,0,0.05)" }}>
+        <div style={{
+          display:       "flex",
+          alignItems:    "center",
+          gap:           9,
+          padding:       "5px 12px 5px 6px",
+          borderRadius:  12,
+          background:    "#FFFFFF",
+          border:        "1px solid rgba(0,0,0,0.06)",
+          boxShadow:     "0 1px 3px rgba(0,0,0,0.04)",
+        }}>
           <Avatar initials={initials} size={26} color={color} src={user.avatar_url} />
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", lineHeight: 1.2 }}>{user.full_name}</div>
-            <div style={{ fontSize: 10, color, fontWeight: 600, textTransform: "capitalize" }}>{user.role}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: "#0A0F1E", lineHeight: 1.2, letterSpacing: "-0.01em" }}>
+              {user.full_name}
+            </div>
+            <div style={{
+              fontSize:    10,
+              fontWeight:  600,
+              color:       color,
+              background:  roleBg,
+              borderRadius: 4,
+              padding:     "1px 5px",
+              display:     "inline-block",
+              marginTop:   2,
+              letterSpacing: "0.1px",
+            }}>
+              {roleLabel}
+            </div>
           </div>
         </div>
 
-        {/* Logout */}
+        {/* Sign out button */}
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          style={{ padding: "7px 14px", borderRadius: 9, border: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.5)", color: "#64748b", fontSize: 11, fontWeight: 600, cursor: loggingOut ? "not-allowed" : "pointer", transition: "all 0.25s cubic-bezier(.4,0,.2,1)", fontFamily: "inherit", opacity: loggingOut ? 0.6 : 1 }}
-          onMouseEnter={(e) => { if (!loggingOut) { (e.currentTarget).style.background = "rgba(239,68,68,0.07)"; (e.currentTarget).style.color = "#ef4444"; (e.currentTarget).style.borderColor = "rgba(239,68,68,0.15)"; } }}
-          onMouseLeave={(e) => { (e.currentTarget).style.background = "rgba(255,255,255,0.5)"; (e.currentTarget).style.color = "#64748b"; (e.currentTarget).style.borderColor = "rgba(0,0,0,0.06)"; }}
+          style={{
+            display:       "flex",
+            alignItems:    "center",
+            gap:           6,
+            padding:       "7px 13px",
+            borderRadius:  10,
+            border:        "1px solid rgba(0,0,0,0.07)",
+            background:    "#FFFFFF",
+            color:         "#6B7280",
+            fontSize:      12.5,
+            fontWeight:    500,
+            cursor:        loggingOut ? "not-allowed" : "pointer",
+            transition:    "all 0.22s cubic-bezier(.4,0,.2,1)",
+            fontFamily:    "inherit",
+            opacity:       loggingOut ? 0.5 : 1,
+            letterSpacing: "-0.01em",
+          }}
+          onMouseEnter={(e) => {
+            if (!loggingOut) {
+              (e.currentTarget).style.background   = "rgba(220,38,38,0.05)";
+              (e.currentTarget).style.color        = "#DC2626";
+              (e.currentTarget).style.borderColor  = "rgba(220,38,38,0.15)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget).style.background  = "#FFFFFF";
+            (e.currentTarget).style.color       = "#6B7280";
+            (e.currentTarget).style.borderColor = "rgba(0,0,0,0.07)";
+          }}
         >
-          {loggingOut ? "…" : "Logout"}
+          <IconSignOut />
+          {loggingOut ? "Signing out…" : "Sign out"}
         </button>
       </div>
     </header>

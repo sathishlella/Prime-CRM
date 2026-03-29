@@ -25,18 +25,45 @@ export default function DashboardShell({
   return (
     <div
       style={{
-        minHeight:   "100vh",
-        display:     "flex",
-        fontFamily:  "'Outfit', system-ui, sans-serif",
-        position:    "relative",
-        background:  "linear-gradient(155deg, #f8faff 0%, #f0f5ff 40%, #f5f3ff 100%)",
+        minHeight:  "100vh",
+        display:    "flex",
+        fontFamily: "'Inter', 'Outfit', system-ui, sans-serif",
+        position:   "relative",
+        background: "linear-gradient(160deg, #F7F9FC 0%, #F5F8FD 50%, #F3F6FB 100%)",
       }}
     >
-      {/* Blob background */}
+      {/* Subtle ambient blobs — very low opacity for premium feel */}
       <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
-        <div style={{ position: "absolute", width: 520, height: 520, top: "-8%", right: "-6%", background: "radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 70%)", animation: "blobA 20s ease-in-out infinite", willChange: "transform" }} />
-        <div style={{ position: "absolute", width: 440, height: 440, bottom: "-4%", left: "10%",  background: "radial-gradient(circle, rgba(16,185,129,0.04) 0%, transparent 70%)", animation: "blobB 25s ease-in-out infinite", willChange: "transform" }} />
-        <div style={{ position: "absolute", width: 320, height: 320, top: "40%",  left: "55%",  background: "radial-gradient(circle, rgba(139,92,246,0.03) 0%, transparent 70%)", animation: "blobC 17s ease-in-out infinite", willChange: "transform" }} />
+        <div style={{
+          position:   "absolute",
+          width:      600,
+          height:     600,
+          top:        "-10%",
+          right:      "-8%",
+          background: "radial-gradient(circle, rgba(10,110,189,0.04) 0%, transparent 65%)",
+          animation:  "blobA 24s ease-in-out infinite",
+          willChange: "transform",
+        }} />
+        <div style={{
+          position:   "absolute",
+          width:      500,
+          height:     500,
+          bottom:     "-6%",
+          left:       "5%",
+          background: "radial-gradient(circle, rgba(5,150,105,0.03) 0%, transparent 65%)",
+          animation:  "blobB 30s ease-in-out infinite",
+          willChange: "transform",
+        }} />
+        <div style={{
+          position:   "absolute",
+          width:      380,
+          height:     380,
+          top:        "38%",
+          left:       "50%",
+          background: "radial-gradient(circle, rgba(124,58,237,0.025) 0%, transparent 65%)",
+          animation:  "blobC 18s ease-in-out infinite",
+          willChange: "transform",
+        }} />
       </div>
 
       {/* Sidebar */}
@@ -52,12 +79,11 @@ export default function DashboardShell({
           user={profile}
           onMenuClick={() => setMobileMenuOpen(true)}
         />
-        <main style={{ flex: 1, padding: "24px 28px 60px", overflowY: "auto" }}>
+        <main style={{ flex: 1, padding: "28px 32px 64px", overflowY: "auto" }}>
           {children}
         </main>
       </div>
 
-      {/* Toast notifications */}
       <ToastContainer />
     </div>
   );
