@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Avatar from "@/components/Avatar";
-import { useUIStore } from "@lib/stores/uiStore";
+import { useUIStore } from "@/lib/stores/uiStore";
 import type { AdminProfile, AdminStudent } from "../page";
 
 interface Counselor {
