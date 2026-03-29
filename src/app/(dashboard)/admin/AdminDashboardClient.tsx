@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -409,12 +410,22 @@ export default function AdminDashboardClient({
   allApplications: AdminApplication[];
   recentCount:     number;
 }) {
+  const router = useRouter();
   const [profiles, setProfiles]     = useState<AdminProfile[]>(allProfiles);
   const [apps, setApps]             = useState<AdminApplication[]>(allApplications);
   const [tab, setTab]               = useState<Tab>("overview");
   const [drillStudent, setDrill]    = useState<AdminStudent | null>(null);
-  const [createModal, setCreate]    = useState(false);
   const { addToast } = useUIStore();
+
+  // Show success toast when redirected back after creating a user
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("created=1")) {
+      addToast("Account created successfully!", "success");
+      const url = new URL(window.location.href);
+      url.searchParams.delete("created");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [addToast]);
 
   const counselors = useMemo(() => profiles.filter((p) => p.role === "counselor"), [profiles]);
   const students   = useMemo(() => allStudents, [allStudents]);
@@ -468,7 +479,7 @@ export default function AdminDashboardClient({
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: "0 0 3px" }}>Admin Overview 👑</h2>
           <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>Full system visibility across all students and counselors.</p>
         </div>
-        <button onClick={() => setCreate(true)}
+        <button onClick={() => router.push("/admin/create-user")}
           style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #3b82f6, #10b981)", color: "#fff", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 7, boxShadow: "0 4px 14px rgba(59,130,246,0.28)", transition: "all 0.25s", whiteSpace: "nowrap" }}
           onMouseEnter={(e) => { (e.currentTarget).style.transform = "translateY(-2px)"; (e.currentTarget).style.boxShadow = "0 8px 24px rgba(59,130,246,0.35)"; }}
           onMouseLeave={(e) => { (e.currentTarget).style.transform = "translateY(0)";    (e.currentTarget).style.boxShadow = "0 4px 14px rgba(59,130,246,0.28)"; }}
