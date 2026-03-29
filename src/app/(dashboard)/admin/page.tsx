@@ -24,7 +24,7 @@ export default async function AdminPage() {
     .order("created_at");
 
   // All students with counselor info
-  const { data: allStudents = [] } = await supabase
+  const { data: rawStudents = [] } = await supabase
     .from("students")
     .select(`
       id, profile_id, status, university, major, graduation_date, visa_status,
@@ -33,14 +33,27 @@ export default async function AdminPage() {
     `)
     .order("created_at");
 
+  // Transform students to extract single profile/counselor from arrays
+  const allStudents = (rawStudents as any[]).map((s: any) => ({
+    ...s,
+    profile: Array.isArray(s.profile) ? s.profile[0] : s.profile,
+    counselor: Array.isArray(s.counselor) ? s.counselor[0] : s.counselor,
+  }));
+
   // All applications
-  const { data: allApplications = [] } = await supabase
+  const { data: rawApplications = [] } = await supabase
     .from("applications")
     .select(`
       id, student_id, company_name, job_role, status, applied_at, updated_at,
       applied_by_profile:profiles!applied_by(id, full_name)
     `)
     .order("applied_at", { ascending: false });
+
+  // Transform applications to extract single applied_by_profile from arrays
+  const allApplications = (rawApplications as any[]).map((a: any) => ({
+    ...a,
+    applied_by_profile: Array.isArray(a.applied_by_profile) ? a.applied_by_profile[0] : a.applied_by_profile,
+  }));
 
   const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
   const recentCount = (allApplications ?? []).filter(

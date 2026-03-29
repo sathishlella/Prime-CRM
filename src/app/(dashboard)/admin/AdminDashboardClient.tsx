@@ -295,7 +295,15 @@ function CreateUserModal({
     // Upsert profile (trigger may have already created it)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .upsert({ id: authData.user.id, full_name: data.full_name, email: data.email, role: data.role })
+      .upsert({ 
+        id: authData.user.id, 
+        full_name: data.full_name, 
+        email: data.email, 
+        role: data.role,
+        phone: null,
+        avatar_url: null,
+        is_active: true
+      })
       .select()
       .single();
 
@@ -310,7 +318,12 @@ function CreateUserModal({
       await supabase.from("students").insert({
         profile_id:            authData.user.id,
         assigned_counselor_id: data.assigned_counselor_id || null,
-      });
+        university: null,
+        major: null,
+        graduation_date: null,
+        visa_status: null,
+        status: "active"
+      } as any);
     }
 
     addToast(`${data.role} account created for ${data.full_name}`, "success");

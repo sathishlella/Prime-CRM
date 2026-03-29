@@ -58,7 +58,7 @@ export async function uploadDocument({
   const fileUrl = urlData?.publicUrl ?? storagePath;
 
   // Insert document record
-  const { data: doc, error: dbError } = await sb
+  const { data: docRaw, error: dbError } = await sb
     .from("documents")
     .insert({
       student_id:  studentId,
@@ -66,7 +66,7 @@ export async function uploadDocument({
       file_url:    storagePath, // store path, not public URL
       file_type:   fileType,
       uploaded_by: uploadedBy,
-    })
+    } as any)
     .select(`id, student_id, file_name, file_url, file_type, uploaded_by, created_at,
              uploaded_by_profile:profiles!uploaded_by(full_name)`)
     .single();
@@ -75,6 +75,12 @@ export async function uploadDocument({
     return { data: null, error: dbError.message };
   }
 
+  // Transform to extract single uploaded_by_profile from array
+  const doc = {
+    ...docRaw,
+    uploaded_by_profile: Array.isArray(docRaw.uploaded_by_profile) ? docRaw.uploaded_by_profile[0] : docRaw.uploaded_by_profile,
+  };
+
   onProgress?.(100);
   void fileUrl; // suppress unused warning
   return { data: doc as Document, error: null };
@@ -82,14 +88,20 @@ export async function uploadDocument({
 
 /** Get documents for a student. */
 export async function getStudentDocuments(studentId: string) {
-  const { data, error } = await supabase()
+  const { data: rawData, error } = await supabase()
     .from("documents")
     .select(`id, student_id, file_name, file_url, file_type, uploaded_by, created_at,
              uploaded_by_profile:profiles!uploaded_by(full_name)`)
     .eq("student_id", studentId)
     .order("created_at", { ascending: false });
 
-  return { data: (data ?? []) as Document[], error };
+  // Transform to extract single uploaded_by_profile from arrays
+  const data = ((rawData ?? []) as any[]).map((d: any) => ({
+    ...d,
+    uploaded_by_profile: Array.isArray(d.uploaded_by_profile) ? d.uploaded_by_profile[0] : d.uploaded_by_profile,
+  }));
+
+  return { data: data as Document[], error };
 }
 
 /** Generate a signed download URL (1-hour expiry). */

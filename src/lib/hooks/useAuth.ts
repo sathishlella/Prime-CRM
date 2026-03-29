@@ -7,11 +7,53 @@ import type { User } from "@supabase/supabase-js";
 import type { Role } from "@/lib/supabase/database.types";
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+console.log("useAuth DEMO_MODE:", DEMO_MODE, "env:", process.env.NEXT_PUBLIC_DEMO_MODE);
 
 const ROLE_HOME: Record<Role, string> = {
   admin:     "/admin",
   counselor: "/counselor",
   student:   "/student",
+};
+
+// Demo users for testing without Supabase
+const DEMO_USERS: Record<string, { password: string; profile: UserProfile }> = {
+  "admin@consultpro.com": {
+    password: "demo123",
+    profile: {
+      id: "00000000-0000-0000-0000-000000000001",
+      full_name: "Raj Mehta",
+      email: "admin@consultpro.com",
+      role: "admin",
+      phone: "+91 98765 00001",
+      avatar_url: null,
+      is_active: true,
+    },
+  },
+  "priya@consultpro.com": {
+    password: "demo123",
+    profile: {
+      id: "00000000-0000-0000-0000-000000000002",
+      full_name: "Priya Sharma",
+      email: "priya@consultpro.com",
+      role: "counselor",
+      phone: "+91 98765 00002",
+      avatar_url: null,
+      is_active: true,
+    },
+  },
+  "sarah@student.com": {
+    password: "demo123",
+    profile: {
+      id: "00000000-0000-0000-0000-000000000004",
+      full_name: "Sarah Mitchell",
+      email: "sarah@student.com",
+      role: "student",
+      phone: null,
+      avatar_url: null,
+      is_active: true,
+    },
+  },
 };
 
 export interface UserProfile {
@@ -81,7 +123,30 @@ export function useAuth(): UseAuthReturn {
   useEffect(() => {
     let cleanup: (() => void) | undefined;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Demo mode: check localStorage for session
+    if (DEMO_MODE) {
+      const demoSession = localStorage.getItem("demo_session");
+      if (demoSession) {
+        try {
+          const { user: demoUser, profile: demoProfile, expires_at } = JSON.parse(demoSession);
+          if (expires_at > Date.now()) {
+            setUser(demoUser as User);
+            setProfile(demoProfile as UserProfile);
+            cleanup = attachIdleListeners();
+          } else {
+            localStorage.removeItem("demo_session");
+          }
+        } catch {
+          localStorage.removeItem("demo_session");
+        }
+      }
+      setIsLoading(false);
+      return () => {
+        if (cleanup) cleanup();
+      };
+    }
+
+    supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: { user: User } | null } }) => {
       if (session?.user) {
         const p = await fetchProfile(session.user.id);
         setUser(session.user);
@@ -93,7 +158,7 @@ export function useAuth(): UseAuthReturn {
 
     // Listen for auth state changes (login / logout / token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: string, session: { user: User } | null) => {
         if (event === "SIGNED_IN" && session?.user) {
           const p = await fetchProfile(session.user.id);
           setUser(session.user);
@@ -122,6 +187,53 @@ export function useAuth(): UseAuthReturn {
   const signIn = useCallback(
     async (email: string, password: string): Promise<{ error: string | null }> => {
       setIsLoading(true);
+
+      // Demo mode: bypass Supabase
+      if (DEMO_MODE) {
+        const demoUser = DEMO_USERS[email.toLowerCase()];
+        if (!demoUser || demoUser.password !== password) {
+          setIsLoading(false);
+          return { error: "Invalid email or password." };
+        }
+        if (!demoUser.profile.is_active) {
+          setIsLoading(false);
+          return { error: "Your account has been deactivated. Please contact your admin." };
+        }
+        
+        // Create a mock User object
+        const mockUser = {
+          id: demoUser.profile.id,
+          email: demoUser.profile.email,
+          user_metadata: {},
+          app_metadata: {},
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+          role: "authenticated",
+          updated_at: new Date().toISOString(),
+          confirmed_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          email_confirmed_at: new Date().toISOString(),
+          phone: null,
+          phone_confirmed_at: null,
+          identities: [],
+          factors: [],
+        } as unknown as User;
+
+        setUser(mockUser);
+        setProfile(demoUser.profile);
+        setIsLoading(false);
+        
+        // Store demo session in localStorage
+        localStorage.setItem("demo_session", JSON.stringify({
+          user: mockUser,
+          profile: demoUser.profile,
+          expires_at: Date.now() + IDLE_TIMEOUT_MS,
+        }));
+
+        router.push(ROLE_HOME[demoUser.profile.role]);
+        router.refresh();
+        return { error: null };
+      }
 
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -158,7 +270,11 @@ export function useAuth(): UseAuthReturn {
 
   // ── signOut ───────────────────────────────────────────────────────────────
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    if (DEMO_MODE) {
+      localStorage.removeItem("demo_session");
+    } else {
+      await supabase.auth.signOut();
+    }
     setUser(null);
     setProfile(null);
     router.push("/login");

@@ -28,14 +28,14 @@ export function useRealtime<T extends Record<string, unknown>>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let channel = supabase.channel(`realtime:${table}:${filter ?? "all"}`);
 
-    const config: Record<string, unknown> = { event, schema: "public", table };
+    const config: any = { event, schema: "public", table };
     if (filter) config.filter = filter;
 
     channel = channel.on(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       "postgres_changes" as any,
       config,
-      (payload: { eventType: string; new: T; old: T }) => {
+      (payload: any) => {
         onEventRef.current(payload);
       }
     );

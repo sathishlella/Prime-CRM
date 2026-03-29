@@ -11,7 +11,7 @@ export default async function CounselorStudentsPage() {
     .from("profiles").select("id, role").eq("id", session.user.id).single();
   if (!profile || profile.role !== "counselor") redirect("/login");
 
-  const { data: students = [] } = await supabase
+  const { data: rawStudents = [] } = await supabase
     .from("students")
     .select(`
       id, university, major, graduation_date, visa_status, status,
@@ -19,6 +19,12 @@ export default async function CounselorStudentsPage() {
     `)
     .eq("assigned_counselor_id", session.user.id)
     .order("created_at");
+
+  // Transform students to extract single profile from arrays
+  const students = (rawStudents as any[]).map((s: any) => ({
+    ...s,
+    profile: Array.isArray(s.profile) ? s.profile[0] : s.profile,
+  }));
 
   return (
     <CounselorStudentsClient

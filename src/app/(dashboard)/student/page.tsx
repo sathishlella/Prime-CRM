@@ -22,7 +22,7 @@ export default async function StudentPage() {
     .eq("profile_id", session.user.id)
     .single();
 
-  const { data: applications = [] } = student
+  const { data: rawApplications = [] } = student
     ? await supabase
         .from("applications")
         .select(`
@@ -33,6 +33,12 @@ export default async function StudentPage() {
         .eq("student_id", student.id)
         .order("applied_at", { ascending: false })
     : { data: [] };
+
+  // Transform applications to extract single applied_by_profile from arrays
+  const applications = ((rawApplications ?? []) as any[]).map((a: any) => ({
+    ...a,
+    applied_by_profile: Array.isArray(a.applied_by_profile) ? a.applied_by_profile[0] : a.applied_by_profile,
+  }));
 
   return (
     <StudentDashboardClient

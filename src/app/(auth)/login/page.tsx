@@ -14,6 +14,9 @@ const ROLE_HOME: Record<Role, string> = {
   student:   "/student",
 };
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+console.log("Login page DEMO_MODE:", DEMO_MODE, "env value:", process.env.NEXT_PUBLIC_DEMO_MODE);
+
 const loginSchema = z.object({
   email:    z.string().email("Enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -72,7 +75,6 @@ function FloatingInput({
           registration.ref(el);
         }}
         {...registration}
-        ref={undefined}
         onFocus={(e) => {
           setFocused(true);
           registration.onBlur && void 0;
@@ -186,7 +188,7 @@ export default function LoginPage() {
             height: 520,
             top: "-8%",
             right: "-6%",
-            background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(59,130,246,0.14) 0%, rgba(59,130,246,0.04) 40%, transparent 70%)",
             animation: "blobA 20s ease-in-out infinite",
           }}
         />
@@ -197,7 +199,7 @@ export default function LoginPage() {
             height: 440,
             bottom: "-4%",
             left: "-5%",
-            background: "radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.03) 40%, transparent 70%)",
             animation: "blobB 25s ease-in-out infinite",
           }}
         />
@@ -208,7 +210,7 @@ export default function LoginPage() {
             height: 320,
             top: "35%",
             left: "45%",
-            background: "radial-gradient(circle, rgba(139,92,246,0.04) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(139,92,246,0.10) 0%, rgba(139,92,246,0.02) 40%, transparent 70%)",
             animation: "blobC 17s ease-in-out infinite",
           }}
         />
@@ -404,7 +406,28 @@ export default function LoginPage() {
 
         <p style={{ textAlign: "center", fontSize: 11, color: "#cbd5e1", marginTop: 20 }}>
           Sessions expire after 30 minutes of inactivity
+          {DEMO_MODE && <span style={{ color: "#10b981", marginLeft: 8 }}>(Demo Active)</span>}
         </p>
+
+        {/* Demo credentials hint */}
+        {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
+          <div style={{
+            marginTop: 24,
+            padding: "14px 16px",
+            background: "rgba(59,130,246,0.08)",
+            border: "1px solid rgba(59,130,246,0.2)",
+            borderRadius: 12,
+            fontSize: 12,
+            color: "#3b82f6",
+          }}>
+            <strong style={{ display: "block", marginBottom: 8, fontSize: 13 }}>🎮 Demo Mode</strong>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, opacity: 0.9 }}>
+              <span><strong>Admin:</strong> admin@consultpro.com / demo123</span>
+              <span><strong>Counselor:</strong> priya@consultpro.com / demo123</span>
+              <span><strong>Student:</strong> sarah@student.com / demo123</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

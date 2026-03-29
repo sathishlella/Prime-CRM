@@ -17,7 +17,7 @@ export default async function CounselorPage() {
   if (!profile || profile.role !== "counselor") redirect("/login");
 
   // Fetch assigned students
-  const { data: students = [] } = await supabase
+  const { data: rawStudents = [] } = await supabase
     .from("students")
     .select(`
       id, profile_id, status, university, major,
@@ -26,10 +26,16 @@ export default async function CounselorPage() {
     .eq("assigned_counselor_id", session.user.id)
     .eq("status", "active");
 
+  // Transform students to extract single profile from arrays
+  const students = (rawStudents as any[]).map((s: any) => ({
+    ...s,
+    profile: Array.isArray(s.profile) ? s.profile[0] : s.profile,
+  }));
+
   // Fetch all applications for those students
   const studentIds = (students ?? []).map((s) => s.id);
 
-  const { data: applications = [] } = studentIds.length
+  const rawApplications = studentIds.length
     ? await supabase
         .from("applications")
         .select(`
@@ -40,6 +46,12 @@ export default async function CounselorPage() {
         .in("student_id", studentIds)
         .order("applied_at", { ascending: false })
     : { data: [] };
+
+  // Transform applications to extract single applied_by_profile from arrays
+  const applications = ((rawApplications.data ?? []) as any[]).map((a: any) => ({
+    ...a,
+    applied_by_profile: Array.isArray(a.applied_by_profile) ? a.applied_by_profile[0] : a.applied_by_profile,
+  }));
 
   return (
     <CounselorDashboardClient

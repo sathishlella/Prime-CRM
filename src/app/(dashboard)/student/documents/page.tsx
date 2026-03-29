@@ -20,7 +20,7 @@ export default async function StudentDocumentsPage() {
     .eq("profile_id", session.user.id)
     .single();
 
-  const { data: docs = [] } = student
+  const { data: rawDocs = [] } = student
     ? await supabase
         .from("documents")
         .select(`id, student_id, file_name, file_url, file_type, uploaded_by, created_at,
@@ -28,6 +28,12 @@ export default async function StudentDocumentsPage() {
         .eq("student_id", student.id)
         .order("created_at", { ascending: false })
     : { data: [] };
+
+  // Transform docs to extract single uploaded_by_profile from arrays
+  const docs = ((rawDocs ?? []) as any[]).map((d: any) => ({
+    ...d,
+    uploaded_by_profile: Array.isArray(d.uploaded_by_profile) ? d.uploaded_by_profile[0] : d.uploaded_by_profile,
+  }));
 
   return (
     <StudentDocumentsClient
