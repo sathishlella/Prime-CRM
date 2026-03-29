@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createUserAction, type CreateUserState } from "@/lib/actions/createUser";
 import { motion } from "framer-motion";
@@ -142,6 +143,44 @@ function Section({ title, children, accentColor, delay = 0 }: {
   );
 }
 
+// ─── Submit button (needs useFormStatus, must be child of <form>) ─────────────
+function SubmitButton({ role }: { role: string }) {
+  const { pending } = useFormStatus();
+  const label = role.charAt(0).toUpperCase() + role.slice(1);
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      style={{
+        width:         "100%",
+        padding:       "13px 0",
+        borderRadius:  14,
+        border:        "none",
+        background:    pending ? "rgba(10,110,189,0.55)" : "#0A6EBD",
+        color:         "#fff",
+        fontFamily:    "'Inter', system-ui, sans-serif",
+        fontSize:      14.5,
+        fontWeight:    600,
+        cursor:        pending ? "not-allowed" : "pointer",
+        boxShadow:     "0 4px 14px rgba(10,110,189,0.22)",
+        transition:    "background 0.2s, transform 0.2s",
+        letterSpacing: "-0.01em",
+      }}
+      onMouseEnter={(e) => { if (!pending) { (e.currentTarget).style.background = "#0857A0"; (e.currentTarget).style.transform = "translateY(-1px)"; } }}
+      onMouseLeave={(e) => { (e.currentTarget).style.background = pending ? "rgba(10,110,189,0.55)" : "#0A6EBD"; (e.currentTarget).style.transform = "translateY(0)"; }}
+    >
+      {pending ? (
+        <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+          <span style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+          Creating account…
+        </span>
+      ) : (
+        `Create ${label} Account`
+      )}
+    </button>
+  );
+}
+
 export default function CreateUserClient({
   counselors,
 }: {
@@ -151,7 +190,7 @@ export default function CreateUserClient({
   const [role, setRole]     = useState<"admin" | "counselor" | "student">("student");
   const [showPwd, setShowPwd] = useState(false);
 
-  const [state, action, pending] = useActionState<CreateUserState, FormData>(createUserAction, {});
+  const [state, action] = useFormState<CreateUserState, FormData>(createUserAction, {});
 
   const focusStyle = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
     e.target.style.borderColor = "rgba(10,110,189,0.45)";
@@ -386,44 +425,7 @@ export default function CreateUserClient({
         )}
 
         {/* ── Submit ── */}
-        <motion.button
-          type="submit"
-          disabled={pending}
-          whileHover={!pending ? { y: -2, boxShadow: "0 10px 30px rgba(10,110,189,0.3)" } : {}}
-          whileTap={!pending ? { y: 0 } : {}}
-          style={{
-            width:         "100%",
-            padding:       "13px 0",
-            borderRadius:  14,
-            border:        "none",
-            background:    pending ? "rgba(10,110,189,0.55)" : "#0A6EBD",
-            color:         "#fff",
-            fontFamily:    "'Inter', system-ui, sans-serif",
-            fontSize:      14.5,
-            fontWeight:    600,
-            cursor:        pending ? "not-allowed" : "pointer",
-            boxShadow:     "0 4px 14px rgba(10,110,189,0.22)",
-            transition:    "background 0.2s",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {pending ? (
-            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-              <span style={{
-                width:          15,
-                height:         15,
-                border:         "2px solid rgba(255,255,255,0.35)",
-                borderTopColor: "#fff",
-                borderRadius:   "50%",
-                display:        "inline-block",
-                animation:      "spin 0.7s linear infinite",
-              }} />
-              Creating account…
-            </span>
-          ) : (
-            `Create ${role.charAt(0).toUpperCase() + role.slice(1)} Account`
-          )}
-        </motion.button>
+        <SubmitButton role={role} />
       </form>
     </div>
   );

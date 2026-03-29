@@ -74,12 +74,13 @@ export async function createUserAction(
   const { error: profileError } = await admin
     .from("profiles")
     .upsert({
-      id:        userId,
+      id:         userId,
       full_name,
       email,
-      role:      role as "admin" | "counselor" | "student",
+      role:       role as "admin" | "counselor" | "student",
       phone,
-      is_active: true,
+      avatar_url: null,
+      is_active:  true,
     });
 
   if (profileError) {
