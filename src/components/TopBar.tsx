@@ -92,9 +92,11 @@ export default function TopBar({ user, onMenuClick }: Props) {
     >
       {/* Left */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Hamburger menu - mobile only */}
         {onMenuClick && (
           <button
             onClick={onMenuClick}
+            className="lg:hidden"
             style={{
               background: "none",
               border:     "none",
@@ -114,8 +116,8 @@ export default function TopBar({ user, onMenuClick }: Props) {
           </button>
         )}
 
-        {/* F1 logo mark - visible on mobile only when sidebar hidden */}
-        <div style={{
+        {/* F1 logo mark - mobile only */}
+        <div className="lg:hidden" style={{
           width:          32,
           height:         32,
           borderRadius:   10,
