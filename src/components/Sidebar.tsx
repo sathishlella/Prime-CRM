@@ -161,11 +161,11 @@ export default function Sidebar({ role, mobileOpen = false, onMobileClose }: Sid
             overflow:        "hidden",
           }}>
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="F1 Dream Jobs"
-              width={48}
-              height={48}
-              style={{ objectFit: "cover", width: "100%", height: "100%" }}
+              width={32}
+              height={32}
+              style={{ objectFit: "contain" }}
               priority
             />
           </div>
