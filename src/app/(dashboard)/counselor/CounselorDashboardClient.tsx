@@ -122,19 +122,10 @@ function AddApplicationModal({
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddAppForm>({
     resolver: zodResolver(addAppSchema),
-    mode: "onChange",
     defaultValues: { company_name: "", job_role: "", job_link: "", resume_used: "", job_description: "", notes: "" },
   });
 
   const watchedStudent = watch("student_id");
-
-  // Get form state for controlled inputs
-  const companyValue = watch("company_name");
-  const roleValue = watch("job_role");
-  const jobLinkValue = watch("job_link");
-  const resumeValue = watch("resume_used");
-  const jdValue = watch("job_description");
-  const notesValue = watch("notes");
 
   // When student changes, fetch their uploaded resumes
   async function onStudentChange(studentId: string) {
@@ -214,8 +205,14 @@ function AddApplicationModal({
     color:       "#1e293b",
     outline:     "none",
     transition:  "all 0.22s cubic-bezier(.4,0,.2,1)",
-    marginBottom: 16,
+    marginBottom: 4,
   };
+
+  // Helper to get input style with error state
+  const getInputStyle = (hasError: boolean): React.CSSProperties => ({
+    ...inputStyle,
+    borderColor: hasError ? "rgba(239,68,68,0.5)" : "rgba(0,0,0,0.08)",
+  });
 
   const errorStyle: React.CSSProperties = {
     color:       "#ef4444",
@@ -232,9 +229,7 @@ function AddApplicationModal({
         <select
           value={watchedStudent}
           onChange={(e) => onStudentChange(e.target.value)}
-          style={{ ...inputStyle, cursor: "pointer" }}
-          onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
+          style={{ ...getInputStyle(!!errors.student_id), cursor: "pointer" }}
         >
           <option value="">Select student…</option>
           {students.map((s) => (
@@ -250,9 +245,7 @@ function AddApplicationModal({
             <input
               {...register("company_name")}
               placeholder="Google"
-              style={inputStyle}
-              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              style={getInputStyle(!!errors.company_name)}
             />
             {errors.company_name && <p style={errorStyle}>{errors.company_name.message}</p>}
           </div>
@@ -261,9 +254,7 @@ function AddApplicationModal({
             <input
               {...register("job_role")}
               placeholder="SWE Intern"
-              style={inputStyle}
-              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              style={getInputStyle(!!errors.job_role)}
             />
             {errors.job_role && <p style={errorStyle}>{errors.job_role.message}</p>}
           </div>
@@ -275,9 +266,7 @@ function AddApplicationModal({
           {...register("job_link")}
           type="url"
           placeholder="https://careers.google.com/…"
-          style={inputStyle}
-          onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+          style={getInputStyle(!!errors.job_link)}
         />
         {errors.job_link && <p style={errorStyle}>{errors.job_link.message}</p>}
 
@@ -291,8 +280,6 @@ function AddApplicationModal({
             <select
               {...register("resume_used")}
               style={{ ...inputStyle, marginBottom: 0, flex: 1, cursor: "pointer" }}
-              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
             >
               <option value="">Select uploaded resume…</option>
               {resumes.map((r) => <option key={r.id} value={r.file_name}>{r.file_name}</option>)}
@@ -302,8 +289,6 @@ function AddApplicationModal({
               {...register("resume_used")}
               placeholder="resume_filename.pdf"
               style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
-              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
             />
           )}
           {/* Upload button */}
@@ -350,9 +335,7 @@ function AddApplicationModal({
           {...register("job_description")}
           placeholder="Paste the job description here…"
           rows={4}
-          style={{ ...inputStyle, resize: "vertical", marginBottom: 16 }}
-          onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+          style={{ ...inputStyle, resize: "vertical", marginBottom: 4 }}
         />
 
         {/* Internal notes */}
@@ -362,8 +345,6 @@ function AddApplicationModal({
           placeholder="Any notes for your records…"
           rows={2}
           style={{ ...inputStyle, resize: "vertical", marginBottom: 20 }}
-          onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
         />
 
         {/* Actions */}
