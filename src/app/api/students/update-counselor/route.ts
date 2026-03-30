@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
+import { sendCounselorAssignedEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,18 +45,33 @@ export async function POST(request: NextRequest) {
 
     // Trigger email notification to student
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-      await fetch(`${baseUrl}/api/email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "counselor_assigned",
-          studentId,
-          counselorId,
-        }),
-      });
+      // Get student and counselor details for email
+      const { data: student } = await adminClient
+        .from("students")
+        .select(`
+          profile_id(full_name, email)
+        `)
+        .eq("id", studentId)
+        .single();
+
+      const { data: counselor } = await adminClient
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", counselorId)
+        .single();
+
+      if (student && counselor) {
+        const studentProfile = (student as any)?.profile_id as { full_name: string; email: string } | null;
+        
+        if (studentProfile?.email) {
+          await sendCounselorAssignedEmail(studentProfile.email, {
+            studentName:    studentProfile.full_name ?? "Student",
+            counselorName:  counselor.full_name ?? "Your Counselor",
+            counselorEmail: counselor.email ?? "counselor@f1dreamjobs.com",
+          });
+          console.log("Counselor assignment email sent to:", studentProfile.email);
+        }
+      }
     } catch (emailError) {
       // Log error but don't fail the request — email is non-critical
       console.error("Failed to send counselor assignment email:", emailError);
