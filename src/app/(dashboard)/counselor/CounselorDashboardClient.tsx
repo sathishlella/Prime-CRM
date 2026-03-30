@@ -12,7 +12,7 @@ import Modal from "@/components/Modal";
 import { useRealtime } from "@/lib/hooks/useRealtime";
 import { useUIStore } from "@/lib/stores/uiStore";
 import { createApplication, updateApplicationStatus } from "@/lib/api/applications";
-import { getStudentResumes } from "@/lib/api/documents";
+import { getStudentResumes, uploadDocument } from "@/lib/api/documents";
 import type { ApplicationStatus } from "@/lib/supabase/database.types";
 import type { CounselorStudent, CounselorApplication } from "./page";
 
@@ -104,21 +104,26 @@ function AddApplicationModal({
   isOpen,
   onClose,
   students,
+  counselorId,
   onAdded,
 }: {
-  isOpen:   boolean;
-  onClose:  () => void;
-  students: CounselorStudent[];
-  onAdded:  (app: CounselorApplication) => void;
+  isOpen:      boolean;
+  onClose:     () => void;
+  students:    CounselorStudent[];
+  counselorId: string;
+  onAdded:     (app: CounselorApplication) => void;
 }) {
   const { addToast } = useUIStore();
-  const [submitting,  setSubmitting]  = useState(false);
-  const [resumes,     setResumes]     = useState<{ id: string; file_name: string }[]>([]);
-  const [loadingRes,  setLoadingRes]  = useState(false);
+  const [submitting,     setSubmitting]     = useState(false);
+  const [resumes,        setResumes]        = useState<{ id: string; file_name: string }[]>([]);
+  const [loadingRes,     setLoadingRes]     = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddAppForm>({
     resolver: zodResolver(addAppSchema),
-    defaultValues: { job_link: "", resume_used: "", job_description: "", notes: "" },
+    mode: "onTouched",
+    defaultValues: { company_name: "", job_role: "", job_link: "", resume_used: "", job_description: "", notes: "" },
   });
 
   const watchedStudent = watch("student_id");
@@ -132,6 +137,27 @@ function AddApplicationModal({
     const { data } = await getStudentResumes(studentId);
     setResumes(data as { id: string; file_name: string }[]);
     setLoadingRes(false);
+  }
+
+  async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const studentId = watch("student_id");
+    if (!file || !studentId) {
+      addToast("Select a student before uploading a resume.", "error");
+      return;
+    }
+    setUploadingResume(true);
+    const { data, error } = await uploadDocument({ file, studentId, uploadedBy: counselorId, fileType: "resume" });
+    setUploadingResume(false);
+    if (error || !data) {
+      addToast("Resume upload failed. Try again.", "error");
+      return;
+    }
+    setResumes((prev) => [{ id: data.id, file_name: data.file_name }, ...prev]);
+    setValue("resume_used", data.file_name);
+    addToast(`Uploaded: ${data.file_name}`, "success");
+    // Reset file input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function onSubmit(data: AddAppForm) {
@@ -213,18 +239,22 @@ function AddApplicationModal({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
             <label style={labelStyle}>Company *</label>
-            <input placeholder="Google" {...register("company_name")} style={inputStyle}
-              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
-            />
+            {(() => { const { onBlur: regBlur, ...reg } = register("company_name"); return (
+              <input placeholder="Google" {...reg} style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
+                onBlur={(e) => { regBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              />
+            ); })()}
             {errors.company_name && <p style={errorStyle}>{errors.company_name.message}</p>}
           </div>
           <div>
             <label style={labelStyle}>Role *</label>
-            <input placeholder="SWE Intern" {...register("job_role")} style={inputStyle}
-              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
-            />
+            {(() => { const { onBlur: regBlur, ...reg } = register("job_role"); return (
+              <input placeholder="SWE Intern" {...reg} style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
+                onBlur={(e) => { regBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              />
+            ); })()}
             {errors.job_role && <p style={errorStyle}>{errors.job_role.message}</p>}
           </div>
         </div>
@@ -237,25 +267,63 @@ function AddApplicationModal({
         />
         {errors.job_link && <p style={errorStyle}>{errors.job_link.message}</p>}
 
-        {/* Resume — dropdown if student has uploads, text input otherwise */}
+        {/* Resume */}
         <label style={labelStyle}>
-          Resume {loadingRes && <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>loading…</span>}
+          Resume
+          {loadingRes && <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0, marginLeft: 6 }}>loading…</span>}
         </label>
-        {resumes.length > 0 ? (
-          <select {...register("resume_used")} style={{ ...inputStyle, cursor: "pointer" }}
-            onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-            onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 16 }}>
+          {resumes.length > 0 ? (
+            <select {...register("resume_used")} style={{ ...inputStyle, marginBottom: 0, flex: 1, cursor: "pointer" }}
+              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
+              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
+            >
+              <option value="">Select uploaded resume…</option>
+              {resumes.map((r) => <option key={r.id} value={r.file_name}>{r.file_name}</option>)}
+            </select>
+          ) : (
+            <input placeholder="resume_filename.pdf" {...register("resume_used")} style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+              onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
+              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
+            />
+          )}
+          {/* Upload button */}
+          <label
+            style={{
+              display:     "flex",
+              alignItems:  "center",
+              gap:         6,
+              padding:     "10px 14px",
+              borderRadius: 10,
+              border:      "1.5px solid rgba(59,130,246,0.35)",
+              background:  uploadingResume ? "rgba(59,130,246,0.06)" : "#fff",
+              color:       "#3b82f6",
+              fontSize:    13,
+              fontWeight:  600,
+              cursor:      uploadingResume ? "not-allowed" : "pointer",
+              whiteSpace:  "nowrap",
+              flexShrink:  0,
+              transition:  "all 0.18s",
+            }}
           >
-            <option value="">Select uploaded resume…</option>
-            {resumes.map((r) => <option key={r.id} value={r.file_name}>{r.file_name}</option>)}
-            <option value="__manual__">Enter manually…</option>
-          </select>
-        ) : (
-          <input placeholder="sarah_resume_v3.pdf" {...register("resume_used")} style={inputStyle}
-            onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-            onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)";      e.target.style.boxShadow = "none"; }}
-          />
-        )}
+            {uploadingResume ? (
+              <span style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid rgba(59,130,246,0.3)", borderTopColor: "#3b82f6", animation: "spin 0.8s linear infinite", display: "inline-block" }} />
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1v8M4 4l3-3 3 3M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+            {uploadingResume ? "Uploading…" : "Upload"}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              style={{ display: "none" }}
+              onChange={handleResumeUpload}
+              disabled={uploadingResume}
+            />
+          </label>
+        </div>
 
         {/* JD */}
         <label style={labelStyle}>Job Description</label>
@@ -644,6 +712,7 @@ export default function CounselorDashboardClient({
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         students={students}
+        counselorId={counselorId}
         onAdded={(app) => setApps((prev) => [app, ...prev])}
       />
     </div>
