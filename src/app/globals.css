@@ -367,6 +367,28 @@ body {
     grid-template-columns: repeat(3, 1fr) !important;
   }
   
+  /* Counselor card mobile adjustments */
+  .counselor-grid > div {
+    padding: 14px 16px !important;
+  }
+  
+  .counselor-grid > div > div:first-child {
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .counselor-grid .counselor-stats > div {
+    padding: 8px 6px !important;
+  }
+  
+  .counselor-grid .counselor-stats > div > div:first-child {
+    font-size: 16px !important;
+  }
+  
+  .counselor-grid .counselor-stats > div > div:last-child {
+    font-size: 9px !important;
+  }
+  
   /* Responsive table wrapper */
   .responsive-table-wrapper {
     overflow-x: auto;
@@ -382,6 +404,25 @@ body {
   
   .responsive-table th {
     font-size: 10px !important;
+  }
+  
+  /* Students table specific mobile fixes */
+  .students-table {
+    min-width: 320px !important;
+  }
+  
+  .students-table .student-cell {
+    gap: 8px !important;
+  }
+  
+  .students-table .student-info {
+    max-width: 100px;
+  }
+  
+  .students-table .student-name,
+  .students-table .student-sub {
+    max-width: 100px !important;
+    font-size: 11px !important;
   }
   .responsive-table thead { display: none; }
   .responsive-table tbody tr {

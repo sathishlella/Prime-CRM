@@ -527,7 +527,7 @@ export default function AdminDashboardClient({
             {/* All Students */}
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 12 }}>All Students</div>
             <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.65)", borderRadius: 18, overflow: "auto", boxShadow: "0 4px 24px rgba(0,0,0,0.03)" }}>
-              <table className="responsive-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+              <table className="responsive-table students-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 320 }}>
                 <thead>
                   <tr style={{ background: "rgba(248,250,255,0.6)", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                     {["Student", "Counselor", "Applications", ""].map((h) => (
@@ -549,16 +549,16 @@ export default function AdminDashboardClient({
                           onMouseEnter={(e) => { (e.currentTarget).style.background = "rgba(59,130,246,0.03)"; }}
                           onMouseLeave={(e) => { (e.currentTarget).style.background = "transparent"; }}
                         >
-                          <td style={{ padding: "12px 16px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <td style={{ padding: "12px 16px", minWidth: 140 }}>
+                            <div className="student-cell" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                               <Avatar initials={initials(s.profile.full_name)} size={32} color="#10b981" src={s.profile.avatar_url} />
-                              <div>
-                                <div style={{ fontSize: 13, fontWeight: 650, color: "#1e293b" }}>{s.profile.full_name}</div>
-                                <div style={{ fontSize: 11, color: "#94a3b8" }}>{s.university ?? s.profile.email}</div>
+                              <div className="student-info">
+                                <div className="student-name" style={{ fontSize: 13, fontWeight: 650, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }}>{s.profile.full_name}</div>
+                                <div className="student-sub" style={{ fontSize: 11, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }}>{s.university ?? s.profile.email}</div>
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: "12px 16px", fontSize: 13, color: "#64748b" }}>
+                          <td style={{ padding: "12px 16px", fontSize: 13, color: "#64748b", whiteSpace: "nowrap" }}>
                             {s.counselor?.full_name ?? <span style={{ color: "#cbd5e1" }}>Unassigned</span>}
                           </td>
                           <td style={{ padding: "12px 16px" }}>
