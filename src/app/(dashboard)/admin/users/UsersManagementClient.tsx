@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import Avatar from "@/components/Avatar";
 import { useUIStore } from "@/lib/stores/uiStore";
@@ -39,7 +39,12 @@ export default function UsersManagementClient({
   const [editingStudent, setEditingStudent] = useState<string | null>(null);
   const [selectedCounselor, setSelectedCounselor] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { addToast } = useUIStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const filteredProfiles = useMemo(() => {
     if (activeTab === "all") return allProfiles;
@@ -161,8 +166,15 @@ export default function UsersManagementClient({
         ))}
       </div>
 
+      {/* Skeleton loader to prevent hydration mismatch */}
+      {!mounted && (
+        <div style={{ background: "rgba(255,255,255,0.5)", borderRadius: 18, padding: 40, textAlign: "center", color: "#94a3b8" }}>
+          Loading...
+        </div>
+      )}
+
       {/* Students Table with Counselor Assignment */}
-      {activeTab === "students" && (
+      {mounted && activeTab === "students" && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -332,7 +344,7 @@ export default function UsersManagementClient({
       )}
 
       {/* All Users / Counselors / Admins Table */}
-      {activeTab !== "students" && (
+      {mounted && activeTab !== "students" && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
