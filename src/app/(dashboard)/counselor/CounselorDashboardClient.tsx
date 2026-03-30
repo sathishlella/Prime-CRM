@@ -397,6 +397,12 @@ export default function CounselorDashboardClient({
       students.find((s) => s.id === a.student_id)?.profile.full_name.toLowerCase().includes(q)
   );
 
+  // Students with no applications (show as empty rows when not searching)
+  const studentsWithApps = new Set(apps.map((a) => a.student_id));
+  const studentsWithNoApps = !q
+    ? students.filter((s) => !studentsWithApps.has(s.id))
+    : [];
+
   function getStudent(studentId: string) {
     return students.find((s) => s.id === studentId);
   }
@@ -579,6 +585,55 @@ export default function CounselorDashboardClient({
                   );
                 })
               )}
+
+              {/* Students with no applications */}
+              {studentsWithNoApps.map((student) => {
+                const initials = student.profile.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+                return (
+                  <tr
+                    key={`no-app-${student.id}`}
+                    style={{ borderBottom: "1px solid rgba(0,0,0,0.035)" }}
+                  >
+                    <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                        <Avatar initials={initials} size={32} color="#94a3b8" src={student.profile.avatar_url} />
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 650, color: "#1e293b" }}>
+                            {student.profile.full_name}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                            {student.university ?? ""}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td colSpan={3} style={{ padding: "12px 16px", verticalAlign: "middle" }}>
+                      <span style={{ fontSize: 12.5, color: "#cbd5e1", fontStyle: "italic" }}>
+                        No applications yet
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px 16px", verticalAlign: "middle", textAlign: "right" }}>
+                      <button
+                        onClick={() => setModalOpen(true)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 8,
+                          border: "1px solid rgba(59,130,246,0.3)",
+                          background: "rgba(59,130,246,0.06)",
+                          color: "#3b82f6",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        + Add Application
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
