@@ -1,6 +1,13 @@
 import { Resend } from "resend";
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+// ─── Lazy client — never initialized at module load time ─────────────────────
+// (Next.js evaluates modules at build time; env var won't exist then)
+function getResend() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY env var is not set");
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // ─── From address ──────────────────────────────────────────────────────────────
 const FROM = "F1 Dream Jobs <notifications@f1dreamjobs.com>";
@@ -269,15 +276,15 @@ export function statusChangeTemplate({
 // ─── Sender helpers ────────────────────────────────────────────────────────────
 export async function sendWelcomeEmail(to: string, data: Parameters<typeof welcomeTemplate>[0]) {
   const { subject, html } = welcomeTemplate(data);
-  return resend.emails.send({ from: FROM, to, subject, html });
+  return getResend().emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendNewApplicationEmail(to: string, data: Parameters<typeof newApplicationTemplate>[0]) {
   const { subject, html } = newApplicationTemplate(data);
-  return resend.emails.send({ from: FROM, to, subject, html });
+  return getResend().emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendStatusChangeEmail(to: string, data: Parameters<typeof statusChangeTemplate>[0]) {
   const { subject, html } = statusChangeTemplate(data);
-  return resend.emails.send({ from: FROM, to, subject, html });
+  return getResend().emails.send({ from: FROM, to, subject, html });
 }
