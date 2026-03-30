@@ -424,6 +424,52 @@ body {
     max-width: 100px !important;
     font-size: 11px !important;
   }
+  
+  /* Users table specific mobile fixes */
+  .users-table {
+    min-width: 320px !important;
+  }
+  
+  .users-table .user-cell {
+    gap: 8px !important;
+  }
+  
+  .users-table .user-info {
+    max-width: 100px;
+  }
+  
+  .users-table .user-name,
+  .users-table .user-email {
+    max-width: 100px !important;
+    font-size: 11px !important;
+  }
+  
+  .users-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px 12px;
+    align-items: center;
+  }
+  
+  .users-table tbody td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  
+  .users-table tbody td.action-cell {
+    display: none;
+  }
+  
+  .users-table tbody td:nth-child(2) {
+    text-align: center;
+  }
+  
+  .users-table tbody td:nth-child(3),
+  .users-table tbody td:nth-child(4) {
+    text-align: right;
+  }
   .responsive-table thead { display: none; }
   .responsive-table tbody tr {
     display:       block;

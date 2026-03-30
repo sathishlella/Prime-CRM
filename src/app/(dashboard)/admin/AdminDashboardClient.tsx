@@ -590,8 +590,8 @@ export default function AdminDashboardClient({
         {/* ══ USER MANAGEMENT TAB ══ */}
         {tab === "users" && (
           <motion.div key="users" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
-            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.65)", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.03)" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.65)", borderRadius: 18, overflow: "auto", boxShadow: "0 4px 24px rgba(0,0,0,0.03)" }}>
+              <table className="responsive-table users-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 400 }}>
                 <thead>
                   <tr style={{ background: "rgba(248,250,255,0.6)", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                     {["User", "Role", "Joined", "Status", "Action"].map((h) => (
@@ -608,11 +608,11 @@ export default function AdminDashboardClient({
                       onMouseLeave={(e) => { (e.currentTarget).style.background = "transparent"; }}
                     >
                       <td style={{ padding: "12px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div className="user-cell" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <Avatar initials={initials(p.full_name)} size={32} color={ROLE_COLOR[p.role] ?? "#3b82f6"} src={p.avatar_url} />
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 650, color: "#1e293b" }}>{p.full_name}</div>
-                            <div style={{ fontSize: 11, color: "#94a3b8" }}>{p.email}</div>
+                          <div className="user-info">
+                            <div className="user-name" style={{ fontSize: 13, fontWeight: 650, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }}>{p.full_name}</div>
+                            <div className="user-email" style={{ fontSize: 11, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }}>{p.email}</div>
                           </div>
                         </div>
                       </td>
@@ -625,9 +625,10 @@ export default function AdminDashboardClient({
                           {p.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 16px" }}>
+                      <td style={{ padding: "12px 16px" }} className="action-cell">
                         <button
                           onClick={() => handleDeactivate(p.id, p.is_active)}
+                          className="action-btn"
                           style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${p.is_active ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}`, background: "transparent", color: p.is_active ? "#ef4444" : "#10b981", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}
                         >
                           {p.is_active ? "Deactivate" : "Activate"}
