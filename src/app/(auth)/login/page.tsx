@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import type { Role } from "@/lib/supabase/database.types";
 
@@ -232,35 +233,38 @@ function LoginPageInner() {
         transition: "all 0.6s cubic-bezier(.4,0,.2,1)",
       }}>
 
-        {/* Wordmark */}
+        {/* Logo & Brand */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{
-            width:          52,
-            height:         52,
-            borderRadius:   17,
-            margin:         "0 auto 18px",
+            width:          64,
+            height:         64,
+            borderRadius:   20,
+            margin:         "0 auto 16px",
             background:     "linear-gradient(145deg, #0A0F1E, #1a2744)",
             display:        "flex",
             alignItems:     "center",
             justifyContent: "center",
-            boxShadow:      "0 6px 24px rgba(10,15,30,0.2)",
+            boxShadow:      "0 8px 32px rgba(10,15,30,0.25)",
             position:       "relative",
             overflow:       "hidden",
             animation:      "float 5s ease-in-out infinite",
           }}>
-            <div style={{
-              position: "absolute", top: -6, right: -6,
-              width: 24, height: 24,
-              background: "rgba(10,110,189,0.7)",
-              borderRadius: "50%",
-              filter: "blur(10px)",
-            }} />
-            <span style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", position: "relative", zIndex: 1 }}>F1</span>
+            <Image
+              src="/logo.png"
+              alt="F1 Dream Jobs"
+              width={64}
+              height={64}
+              style={{ objectFit: "cover", width: "100%", height: "100%" }}
+              priority
+            />
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0A0F1E", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#0A0F1E", margin: 0, letterSpacing: "-0.5px" }}>
             F1 Dream Jobs
           </h1>
-          <p style={{ color: "#9CA3AF", fontSize: 13, marginTop: 6, fontWeight: 400 }}>
+          <p style={{ color: "#6B7280", fontSize: 14, marginTop: 4, fontWeight: 500 }}>
+            CRM Dashboard
+          </p>
+          <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2, fontWeight: 400 }}>
             Sign in to your workspace
           </p>
         </div>
