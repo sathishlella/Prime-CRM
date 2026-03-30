@@ -9,6 +9,7 @@ import ToastContainer from "@/components/Toast";
 interface Profile {
   id:         string;
   full_name:  string;
+  email:      string;
   role:       Role;
   avatar_url: string | null;
 }
