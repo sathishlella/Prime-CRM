@@ -79,7 +79,7 @@ export default function DashboardShell({
           user={profile}
           onMenuClick={() => setMobileMenuOpen(true)}
         />
-        <main style={{ flex: 1, padding: "28px 32px 64px", overflowY: "auto" }}>
+        <main style={{ flex: 1, padding: "28px 32px 64px", overflow: "visible" }}>
           {children}
         </main>
       </div>
