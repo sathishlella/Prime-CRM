@@ -497,7 +497,7 @@ export default function CounselorDashboardClient({
           overflow:             "visible",
         }}
       >
-        <div style={{ overflowX: "auto", borderRadius: 18 }}>
+        <div style={{ overflow: "visible", borderRadius: 18 }}>
           <table className="responsive-table counselor-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>

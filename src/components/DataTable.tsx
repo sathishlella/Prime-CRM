@@ -31,10 +31,10 @@ export default function DataTable<T extends { id: string }>({
         border:               "1px solid rgba(255,255,255,0.65)",
         borderRadius:         18,
         boxShadow:            "0 4px 24px rgba(0,0,0,0.03)",
-        overflow:             "hidden",
+        overflow:             "visible",
       }}
     >
-      <div style={{ overflowX: "auto" }}>
+      <div style={{ overflow: "visible" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           {/* Header */}
           <thead>
