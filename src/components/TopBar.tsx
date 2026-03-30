@@ -303,7 +303,7 @@ export default function TopBar({ user, onMenuClick }: Props) {
           boxShadow: "0 2px 8px rgba(10,15,30,0.15)",
         }}>
           <Image
-            src="/logo.svg"
+            src="/logo.png"
             alt="F1"
             width={22}
             height={22}

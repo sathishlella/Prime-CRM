@@ -161,7 +161,7 @@ export default function Sidebar({ role, mobileOpen = false, onMobileClose }: Sid
             overflow:        "hidden",
           }}>
             <Image
-              src="/logo.svg"
+              src="/logo.png"
               alt="F1 Dream Jobs"
               width={32}
               height={32}
