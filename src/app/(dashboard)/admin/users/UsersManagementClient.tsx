@@ -124,9 +124,11 @@ export default function UsersManagementClient({
   }
 
   function confirmDelete(user: AdminProfile | AdminStudent, role: string) {
+    // AdminProfile has full_name directly, AdminStudent has it in profile.full_name
+    const name = "profile" in user ? user.profile.full_name : user.full_name;
     setDeletingUser({
       id: user.id,
-      name: user.profile.full_name,
+      name: name,
       role: role,
     });
   }
