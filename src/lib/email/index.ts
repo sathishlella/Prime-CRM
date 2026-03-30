@@ -10,7 +10,7 @@ function getResend() {
 }
 
 // ─── From address ──────────────────────────────────────────────────────────────
-const FROM = "F1 Dream Jobs <notifications@f1dreamjobs.com>";
+const FROM = "F1 Dream Jobs <onboarding@resend.dev>";
 
 // ─── Status display helpers ────────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {

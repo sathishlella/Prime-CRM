@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import {
   sendWelcomeEmail,
   sendNewApplicationEmail,
@@ -29,6 +29,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { type } = body;
 
+    // Admin client bypasses RLS to read student email/profile
+    const admin = createAdminClient();
+
     if (type === "welcome") {
       const { to, name, role, email } = body;
       if (!to || !name || !role || !email) {
@@ -38,19 +41,68 @@ export async function POST(req: NextRequest) {
     }
 
     else if (type === "new_application") {
-      const { to, studentName, counselorName, companyName, jobRole, jobLink } = body;
-      if (!to || !studentName || !counselorName || !companyName || !jobRole) {
-        return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      const { appId } = body;
+      if (!appId) return NextResponse.json({ error: "Missing appId" }, { status: 400 });
+
+      // Look up everything we need from the DB
+      const { data: app } = await admin
+        .from("applications")
+        .select(`
+          company_name, job_role, job_link,
+          student:students!inner(profile_id(full_name, email)),
+          counselor:profiles!applied_by(full_name)
+        `)
+        .eq("id", appId)
+        .single();
+
+      if (!app) return NextResponse.json({ error: "Application not found" }, { status: 404 });
+
+      const studentProfile = (app.student as any)?.profile_id as { full_name: string; email: string } | null;
+      const counselorProfile = (app.counselor as any) as { full_name: string } | null;
+
+      if (!studentProfile?.email) {
+        return NextResponse.json({ ok: false, message: "No student email found" });
       }
-      await sendNewApplicationEmail(to, { studentName, counselorName, companyName, jobRole, jobLink });
+
+      await sendNewApplicationEmail(studentProfile.email, {
+        studentName:   studentProfile.full_name ?? "Student",
+        counselorName: counselorProfile?.full_name ?? "Your counselor",
+        companyName:   app.company_name,
+        jobRole:       app.job_role,
+        jobLink:       app.job_link ?? null,
+      });
     }
 
     else if (type === "status_change") {
-      const { to, studentName, companyName, jobRole, oldStatus, newStatus } = body;
-      if (!to || !studentName || !companyName || !jobRole || !oldStatus || !newStatus) {
+      const { appId, newStatus, oldStatus } = body;
+      if (!appId || !newStatus || !oldStatus) {
         return NextResponse.json({ error: "Missing fields" }, { status: 400 });
       }
-      await sendStatusChangeEmail(to, { studentName, companyName, jobRole, oldStatus, newStatus });
+
+      const { data: app } = await admin
+        .from("applications")
+        .select(`
+          company_name, job_role,
+          student:students!inner(profile_id(full_name, email))
+        `)
+        .eq("id", appId)
+        .single();
+
+      if (!app) return NextResponse.json({ error: "Application not found" }, { status: 404 });
+
+      const studentProfile = (app.student as any)?.profile_id as { full_name: string; email: string } | null;
+
+      if (!studentProfile?.email) {
+        return NextResponse.json({ ok: false, message: "No student email found" });
+      }
+
+      await sendStatusChangeEmail(studentProfile.email, {
+        studentName: studentProfile.full_name ?? "Student",
+        companyName: app.company_name,
+        jobRole:     app.job_role,
+        oldStatus,
+        newStatus,
+      });
     }
 
     else {
@@ -60,7 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[email route]", err);
-    // Never let email failure crash the app — return 200 with flag
+    // Never let email failure crash the app
     return NextResponse.json({ ok: false, message: "Email failed silently" });
   }
 }

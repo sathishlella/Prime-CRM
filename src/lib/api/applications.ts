@@ -69,8 +69,8 @@ export async function createApplication(data: {
     return { data: null, error: new Error("Not authenticated") };
   }
 
-  // Destructure email-only fields before DB insert
-  const { studentEmail, studentName, counselorName, ...dbData } = data;
+  // Strip email-only fields before DB insert
+  const { studentEmail: _se, studentName: _sn, counselorName: _cn, ...dbData } = data;
 
   const { data: app, error } = await supabase()
     .from("applications")
@@ -78,34 +78,15 @@ export async function createApplication(data: {
     .select()
     .single();
 
-  // Fire notification email to student (non-blocking)
-  if (!error && app && studentEmail && studentName) {
-    sendEmail({
-      type:          "new_application",
-      to:            studentEmail,
-      studentName,
-      counselorName: counselorName ?? "Your counselor",
-      companyName:   data.company_name,
-      jobRole:       data.job_role,
-      jobLink:       data.job_link ?? null,
-    });
+  // Fire notification email to student (non-blocking) — route does its own DB lookup
+  if (!error && app) {
+    sendEmail({ type: "new_application", appId: app.id });
   }
 
   return { data: app, error };
 }
 
-export async function updateApplicationStatus(
-  id:          string,
-  status:      ApplicationStatus,
-  // Extra context for email (optional — won't break if missing)
-  emailCtx?: {
-    studentEmail: string;
-    studentName:  string;
-    companyName:  string;
-    jobRole:      string;
-    oldStatus:    string;
-  }
-) {
+export async function updateApplicationStatus(id: string, status: ApplicationStatus) {
   if (DEMO_MODE) {
     const appIndex = demoApplications.findIndex((a) => a.id === id);
     if (appIndex >= 0) {
@@ -119,6 +100,15 @@ export async function updateApplicationStatus(
     return { data: null, error: new Error("Application not found") };
   }
 
+  // Capture old status before updating (needed for email)
+  const { data: current } = await supabase()
+    .from("applications")
+    .select("status")
+    .eq("id", id)
+    .single();
+
+  const oldStatus = current?.status ?? "applied";
+
   const { data, error } = await supabase()
     .from("applications")
     .update({ status })
@@ -126,17 +116,9 @@ export async function updateApplicationStatus(
     .select()
     .single();
 
-  // Fire status change email (non-blocking)
-  if (!error && data && emailCtx) {
-    sendEmail({
-      type:        "status_change",
-      to:          emailCtx.studentEmail,
-      studentName: emailCtx.studentName,
-      companyName: emailCtx.companyName,
-      jobRole:     emailCtx.jobRole,
-      oldStatus:   emailCtx.oldStatus,
-      newStatus:   status,
-    });
+  // Fire status change email (non-blocking) — route does its own DB lookup
+  if (!error && data) {
+    sendEmail({ type: "status_change", appId: id, newStatus: status, oldStatus });
   }
 
   return { data, error };
