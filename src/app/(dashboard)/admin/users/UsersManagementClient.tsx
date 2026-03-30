@@ -175,7 +175,7 @@ export default function UsersManagementClient({
             overflow: "auto",
           }}
         >
-          <table className="responsive-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+          <table className="responsive-table students-page-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 320 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>
                 {["Student", "University", "Assigned Counselor", "Status", "Actions"].map((h) => (
@@ -342,10 +342,10 @@ export default function UsersManagementClient({
             border: "1px solid rgba(255,255,255,0.65)",
             borderRadius: 18,
             boxShadow: "0 4px 24px rgba(0,0,0,0.03)",
-            overflow: "hidden",
+            overflow: "auto",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="responsive-table users-page-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 320 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>
                 {["User", "Email", "Role", "Status", "Joined"].map((h) => (
@@ -370,18 +370,23 @@ export default function UsersManagementClient({
               {filteredProfiles.map((profile) => (
                 <tr key={profile.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.035)" }}>
                   <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div className="user-cell" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <Avatar
                         initials={profile.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
                         size={36}
                         color={ROLE_COLORS[profile.role]}
                       />
-                      <div style={{ fontSize: 13.5, fontWeight: 650, color: "#1e293b" }}>
-                        {profile.full_name}
+                      <div className="user-info">
+                        <div className="user-name" style={{ fontSize: 13.5, fontWeight: 650, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }}>
+                          {profile.full_name}
+                        </div>
+                        <div className="user-email" style={{ fontSize: 12, color: "#475569", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
+                          {profile.email}
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569" }}>{profile.email}</td>
+                  <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569" }} className="email-cell">{profile.email}</td>
                   <td style={{ padding: "14px 16px" }}>
                     <span
                       style={{

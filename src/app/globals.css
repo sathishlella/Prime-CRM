@@ -480,6 +480,89 @@ body {
   .users-table tbody td:nth-child(4) {
     text-align: right;
   }
+  
+  /* Users page table specific mobile fixes */
+  .users-page-table {
+    min-width: 320px !important;
+  }
+  
+  .users-page-table .user-cell {
+    gap: 8px !important;
+  }
+  
+  .users-page-table .user-info {
+    max-width: 120px;
+  }
+  
+  .users-page-table .user-name {
+    max-width: 120px !important;
+    font-size: 12px !important;
+  }
+  
+  .users-page-table .user-email {
+    display: none;
+  }
+  
+  .users-page-table td.email-cell {
+    display: none;
+  }
+  
+  .users-page-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px 12px;
+    align-items: center;
+  }
+  
+  .users-page-table tbody td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  
+  .users-page-table tbody td:nth-child(3),
+  .users-page-table tbody td:nth-child(5) {
+    text-align: center;
+  }
+  
+  .users-page-table tbody td:nth-child(4) {
+    text-align: right;
+  }
+  
+  /* Students page table specific mobile fixes */
+  .students-page-table {
+    min-width: 320px !important;
+  }
+  
+  .students-page-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    align-items: center;
+  }
+  
+  .students-page-table tbody td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  
+  .students-page-table tbody td:nth-child(2) {
+    text-align: left;
+    font-weight: 500;
+  }
+  
+  .students-page-table tbody td:nth-child(3) {
+    text-align: right;
+    font-size: 11px;
+  }
+  
+  .students-page-table tbody td:nth-child(4),
+  .students-page-table tbody td:nth-child(5) {
+    display: none;
+  }
   .responsive-table thead { display: none; }
   .responsive-table tbody tr {
     display:       block;
