@@ -4,6 +4,7 @@ import {
   sendWelcomeEmail,
   sendNewApplicationEmail,
   sendStatusChangeEmail,
+  sendCounselorAssignedEmail,
 } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
@@ -102,6 +103,43 @@ export async function POST(req: NextRequest) {
         jobRole:     app.job_role,
         oldStatus,
         newStatus,
+      });
+    }
+
+    else if (type === "counselor_assigned") {
+      const { studentId, counselorId } = body;
+      if (!studentId || !counselorId) {
+        return NextResponse.json({ error: "Missing studentId or counselorId" }, { status: 400 });
+      }
+
+      // Look up student and counselor details
+      const { data: student } = await admin
+        .from("students")
+        .select(`
+          profile_id(full_name, email)
+        `)
+        .eq("id", studentId)
+        .single();
+
+      const { data: counselor } = await admin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", counselorId)
+        .single();
+
+      if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      if (!counselor) return NextResponse.json({ error: "Counselor not found" }, { status: 404 });
+
+      const studentProfile = (student as any)?.profile_id as { full_name: string; email: string } | null;
+
+      if (!studentProfile?.email) {
+        return NextResponse.json({ ok: false, message: "No student email found" });
+      }
+
+      await sendCounselorAssignedEmail(studentProfile.email, {
+        studentName:    studentProfile.full_name ?? "Student",
+        counselorName:  counselor.full_name ?? "Your Counselor",
+        counselorEmail: counselor.email ?? "counselor@f1dreamjobs.com",
       });
     }
 

@@ -42,6 +42,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Trigger email notification to student
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      await fetch(`${baseUrl}/api/email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "counselor_assigned",
+          studentId,
+          counselorId,
+        }),
+      });
+    } catch (emailError) {
+      // Log error but don't fail the request — email is non-critical
+      console.error("Failed to send counselor assignment email:", emailError);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Unexpected error:", error);

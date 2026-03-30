@@ -12,6 +12,7 @@ interface Props {
     id:         string;
     full_name:  string;
     role:       string;
+    email:      string;
     avatar_url?: string | null;
   };
   onMenuClick?: () => void;
@@ -186,7 +187,9 @@ function UserDropdown({
               {user.full_name}
             </div>
             <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
-              {user.role}@f1dreamjobs.com
+              <a href={`mailto:${user.email}`} style={{ color: "#6B7280", textDecoration: "none" }}>
+                {user.email}
+              </a>
             </div>
           </div>
 

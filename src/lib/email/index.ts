@@ -292,3 +292,57 @@ export async function sendStatusChangeEmail(to: string, data: Parameters<typeof 
   const { subject, html } = statusChangeTemplate(data);
   return getResend().emails.send({ from: FROM, to, subject, html });
 }
+
+// ─── Template: Counselor Assigned ──────────────────────────────────────────────
+export function counselorAssignedTemplate({
+  studentName,
+  counselorName,
+  counselorEmail,
+}: {
+  studentName:   string;
+  counselorName: string;
+  counselorEmail: string;
+}) {
+  const content = `
+    <div style="margin-bottom:24px;">
+      <div style="display:inline-block;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:16px;">Counselor Assigned</div>
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#0A0F1E;letter-spacing:-0.5px;">Welcome to F1 Dream Jobs</h1>
+      <p style="margin:0;font-size:15px;color:#6B7280;line-height:1.6;">Hi ${studentName}, you've been assigned a dedicated counselor to help with your job search.</p>
+    </div>
+
+    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:14px;padding:20px 24px;margin-bottom:28px;">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">Your Counselor</div>
+        <div style="font-size:18px;font-weight:800;color:#0A0F1E;">${counselorName}</div>
+      </div>
+      <div style="margin-bottom:0;">
+        <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">Contact Email</div>
+        <div style="font-size:14px;color:#374151;">
+          <a href="mailto:${counselorEmail}" style="color:#0A6EBD;font-weight:600;text-decoration:none;">${counselorEmail}</a>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.7;">
+      Your counselor will reach out to you soon to discuss your career goals and start submitting job applications on your behalf. 
+      You can log in to your dashboard at any time to view your applications and track their status.
+    </p>
+
+    <div style="text-align:center;">
+      <a href="https://f1-dream-crm-dashboard.vercel.app/student" style="display:inline-block;background:#059669;color:#fff;font-size:14px;font-weight:600;padding:12px 28px;border-radius:12px;text-decoration:none;">
+        Go to Dashboard →
+      </a>
+    </div>
+  `;
+
+  return {
+    subject: `You've been assigned a counselor — ${counselorName}`,
+    html:    baseLayout(content),
+  };
+}
+
+// ─── Sender helper: Counselor Assigned ─────────────────────────────────────────
+export async function sendCounselorAssignedEmail(to: string, data: Parameters<typeof counselorAssignedTemplate>[0]) {
+  const { subject, html } = counselorAssignedTemplate(data);
+  return getResend().emails.send({ from: FROM, to, subject, html });
+}
