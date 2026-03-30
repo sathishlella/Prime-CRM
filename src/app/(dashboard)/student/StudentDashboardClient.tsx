@@ -256,6 +256,7 @@ export default function StudentDashboardClient({
 
       {/* ── Stat cards ── */}
       <div
+        className="stats-grid"
         style={{
           display:             "grid",
           gridTemplateColumns: "repeat(4, 1fr)",

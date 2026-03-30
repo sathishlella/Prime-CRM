@@ -608,6 +608,48 @@ body {
     display: none;
   }
   
+  /* 5-column stats grid - mobile: 2x3 layout */
+  .stats-grid:has(> *:nth-child(5)) {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  .stats-grid:has(> *:nth-child(5)) > div:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+  
+  /* Counselor table specific mobile fixes */
+  .counselor-table {
+    min-width: 320px !important;
+  }
+  
+  .counselor-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    align-items: center;
+  }
+  
+  .counselor-table tbody td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  
+  .counselor-table tbody td:nth-child(2) {
+    font-weight: 500;
+  }
+  
+  .counselor-table tbody td:nth-child(4) {
+    text-align: right;
+  }
+  
+  .counselor-table tbody td:nth-child(3),
+  .counselor-table tbody td:nth-child(5) {
+    display: none;
+  }
+  
   .responsive-table tbody td::before {
     content:        attr(data-label);
     font-weight:    600;

@@ -450,7 +450,7 @@ export default function CounselorDashboardClient({
       </motion.div>
 
       {/* ── Stat cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 24 }}>
+      <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 24 }}>
         <StatCard icon="👥" value={counts.students}    label="My Students"  delay={0}   />
         <StatCard icon="📨" value={counts.applied}     label="Applied"      delay={60}  />
         <StatCard icon="⚙️" value={counts.in_progress} label="In Progress"  delay={120} />
@@ -498,7 +498,7 @@ export default function CounselorDashboardClient({
         }}
       >
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="responsive-table counselor-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>
                 {["Student", "Company / Role", "Resume", "Status", "Date"].map((h) => (
