@@ -144,34 +144,30 @@ export default function Sidebar({ role, mobileOpen = false, onMobileClose }: Sid
           overflowY:            "auto",
         }}
       >
-        {/* ── Wordmark ── */}
-        <Link href={`/${role}`} style={{ textDecoration: "none", padding: "0 4px 28px", display: "flex", alignItems: "center", gap: 11 }}>
-          {/* Logo mark */}
+        {/* ── Logo ── */}
+        <Link href={`/${role}`} style={{ textDecoration: "none", padding: "0 4px 28px", display: "block" }}>
+          {/* Logo Image */}
           <div style={{
-            width:           38,
-            height:          38,
-            borderRadius:    12,
+            width:           48,
+            height:          48,
+            borderRadius:    14,
             background:      "linear-gradient(145deg, #0A0F1E 0%, #1a2744 100%)",
             display:         "flex",
             alignItems:      "center",
             justifyContent:  "center",
             flexShrink:      0,
-            boxShadow:       "0 2px 8px rgba(10,15,30,0.18)",
+            boxShadow:       "0 3px 12px rgba(10,15,30,0.2)",
             position:        "relative",
             overflow:        "hidden",
           }}>
             <Image
-              src="/logo.svg"
+              src="/logo.png"
               alt="F1 Dream Jobs"
-              width={24}
-              height={24}
-              style={{ position: "relative", zIndex: 1 }}
+              width={48}
+              height={48}
+              style={{ objectFit: "cover", width: "100%", height: "100%" }}
               priority
             />
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#0A0F1E", letterSpacing: "-0.3px", lineHeight: 1.2 }}>F1 Dream Jobs</div>
-            <div style={{ fontSize: 10.5, color: "#9CA3AF", fontWeight: 500, marginTop: 1 }}>{ROLE_LABEL[role]}</div>
           </div>
         </Link>
 
