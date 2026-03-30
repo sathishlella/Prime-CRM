@@ -128,13 +128,13 @@ function AddApplicationModal({
 
   const watchedStudent = watch("student_id");
 
-  // Register fields at component level so they're stable across renders
-  const regCompany  = register("company_name");
-  const regRole     = register("job_role");
-  const regJobLink  = register("job_link");
-  const regResume   = register("resume_used");
-  const regJD       = register("job_description");
-  const regNotes    = register("notes");
+  // Get form state for controlled inputs
+  const companyValue = watch("company_name");
+  const roleValue = watch("job_role");
+  const jobLinkValue = watch("job_link");
+  const resumeValue = watch("resume_used");
+  const jdValue = watch("job_description");
+  const notesValue = watch("notes");
 
   // When student changes, fetch their uploaded resumes
   async function onStudentChange(studentId: string) {
@@ -248,26 +248,22 @@ function AddApplicationModal({
           <div>
             <label style={labelStyle}>Company *</label>
             <input
-              name={regCompany.name}
-              ref={regCompany.ref}
-              onChange={regCompany.onChange}
+              {...register("company_name")}
               placeholder="Google"
               style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { regCompany.onBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
             />
             {errors.company_name && <p style={errorStyle}>{errors.company_name.message}</p>}
           </div>
           <div>
             <label style={labelStyle}>Role *</label>
             <input
-              name={regRole.name}
-              ref={regRole.ref}
-              onChange={regRole.onChange}
+              {...register("job_role")}
               placeholder="SWE Intern"
               style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { regRole.onBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
             />
             {errors.job_role && <p style={errorStyle}>{errors.job_role.message}</p>}
           </div>
@@ -276,14 +272,12 @@ function AddApplicationModal({
         {/* Job Link */}
         <label style={labelStyle}>Job Link</label>
         <input
-          name={regJobLink.name}
-          ref={regJobLink.ref}
-          onChange={regJobLink.onChange}
+          {...register("job_link")}
           type="url"
           placeholder="https://careers.google.com/…"
           style={inputStyle}
           onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { regJobLink.onBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
         />
         {errors.job_link && <p style={errorStyle}>{errors.job_link.message}</p>}
 
@@ -295,25 +289,21 @@ function AddApplicationModal({
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 16 }}>
           {resumes.length > 0 ? (
             <select
-              name={regResume.name}
-              ref={regResume.ref}
-              onChange={regResume.onChange}
+              {...register("resume_used")}
               style={{ ...inputStyle, marginBottom: 0, flex: 1, cursor: "pointer" }}
               onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { regResume.onBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
             >
               <option value="">Select uploaded resume…</option>
               {resumes.map((r) => <option key={r.id} value={r.file_name}>{r.file_name}</option>)}
             </select>
           ) : (
             <input
-              name={regResume.name}
-              ref={regResume.ref}
-              onChange={regResume.onChange}
+              {...register("resume_used")}
               placeholder="resume_filename.pdf"
               style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
               onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-              onBlur={(e)  => { regResume.onBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+              onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
             />
           )}
           {/* Upload button */}
@@ -357,27 +347,23 @@ function AddApplicationModal({
         {/* JD */}
         <label style={labelStyle}>Job Description</label>
         <textarea
-          name={regJD.name}
-          ref={regJD.ref}
-          onChange={regJD.onChange}
+          {...register("job_description")}
           placeholder="Paste the job description here…"
           rows={4}
           style={{ ...inputStyle, resize: "vertical", marginBottom: 16 }}
           onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { regJD.onBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
         />
 
         {/* Internal notes */}
         <label style={labelStyle}>Internal Notes (not visible to student)</label>
         <textarea
-          name={regNotes.name}
-          ref={regNotes.ref}
-          onChange={regNotes.onChange}
+          {...register("notes")}
           placeholder="Any notes for your records…"
           rows={2}
           style={{ ...inputStyle, resize: "vertical", marginBottom: 20 }}
           onFocus={(e) => { e.target.style.borderColor = "rgba(59,130,246,0.45)"; e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)"; }}
-          onBlur={(e)  => { regNotes.onBlur(e); e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
+          onBlur={(e)  => { e.target.style.borderColor = "rgba(0,0,0,0.08)"; e.target.style.boxShadow = "none"; }}
         />
 
         {/* Actions */}
