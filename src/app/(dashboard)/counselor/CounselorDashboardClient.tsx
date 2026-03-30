@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import StatCard from "@/components/StatCard";
@@ -120,7 +120,7 @@ function AddApplicationModal({
   const [uploadingResume, setUploadingResume] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddAppForm>({
+  const { control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddAppForm>({
     resolver: zodResolver(addAppSchema),
     defaultValues: { student_id: "", company_name: "", job_role: "", job_link: "", resume_used: "", job_description: "", notes: "" },
   });
@@ -242,19 +242,31 @@ function AddApplicationModal({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
             <label style={labelStyle}>Company *</label>
-            <input
-              {...register("company_name")}
-              placeholder="Google"
-              style={getInputStyle(!!errors.company_name)}
+            <Controller
+              name="company_name"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  placeholder="Google"
+                  style={getInputStyle(!!errors.company_name)}
+                />
+              )}
             />
             {errors.company_name && <p style={errorStyle}>{errors.company_name.message}</p>}
           </div>
           <div>
             <label style={labelStyle}>Role *</label>
-            <input
-              {...register("job_role")}
-              placeholder="SWE Intern"
-              style={getInputStyle(!!errors.job_role)}
+            <Controller
+              name="job_role"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  placeholder="SWE Intern"
+                  style={getInputStyle(!!errors.job_role)}
+                />
+              )}
             />
             {errors.job_role && <p style={errorStyle}>{errors.job_role.message}</p>}
           </div>
@@ -262,11 +274,17 @@ function AddApplicationModal({
 
         {/* Job Link */}
         <label style={labelStyle}>Job Link</label>
-        <input
-          {...register("job_link")}
-          type="url"
-          placeholder="https://careers.google.com/…"
-          style={getInputStyle(!!errors.job_link)}
+        <Controller
+          name="job_link"
+          control={control}
+          render={({ field }) => (
+            <input
+              {...field}
+              type="url"
+              placeholder="https://careers.google.com/…"
+              style={getInputStyle(!!errors.job_link)}
+            />
+          )}
         />
         {errors.job_link && <p style={errorStyle}>{errors.job_link.message}</p>}
 
@@ -277,18 +295,30 @@ function AddApplicationModal({
         </label>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 16 }}>
           {resumes.length > 0 ? (
-            <select
-              {...register("resume_used")}
-              style={{ ...inputStyle, marginBottom: 0, flex: 1, cursor: "pointer" }}
-            >
-              <option value="">Select uploaded resume…</option>
-              {resumes.map((r) => <option key={r.id} value={r.file_name}>{r.file_name}</option>)}
-            </select>
+            <Controller
+              name="resume_used"
+              control={control}
+              render={({ field }) => (
+                <select
+                  {...field}
+                  style={{ ...inputStyle, marginBottom: 0, flex: 1, cursor: "pointer" }}
+                >
+                  <option value="">Select uploaded resume…</option>
+                  {resumes.map((r) => <option key={r.id} value={r.file_name}>{r.file_name}</option>)}
+                </select>
+              )}
+            />
           ) : (
-            <input
-              {...register("resume_used")}
-              placeholder="resume_filename.pdf"
-              style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+            <Controller
+              name="resume_used"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  placeholder="resume_filename.pdf"
+                  style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+                />
+              )}
             />
           )}
           {/* Upload button */}
@@ -331,20 +361,32 @@ function AddApplicationModal({
 
         {/* JD */}
         <label style={labelStyle}>Job Description</label>
-        <textarea
-          {...register("job_description")}
-          placeholder="Paste the job description here…"
-          rows={4}
-          style={{ ...inputStyle, resize: "vertical", marginBottom: 4 }}
+        <Controller
+          name="job_description"
+          control={control}
+          render={({ field }) => (
+            <textarea
+              {...field}
+              placeholder="Paste the job description here…"
+              rows={4}
+              style={{ ...inputStyle, resize: "vertical", marginBottom: 4 }}
+            />
+          )}
         />
 
         {/* Internal notes */}
         <label style={labelStyle}>Internal Notes (not visible to student)</label>
-        <textarea
-          {...register("notes")}
-          placeholder="Any notes for your records…"
-          rows={2}
-          style={{ ...inputStyle, resize: "vertical", marginBottom: 20 }}
+        <Controller
+          name="notes"
+          control={control}
+          render={({ field }) => (
+            <textarea
+              {...field}
+              placeholder="Any notes for your records…"
+              rows={2}
+              style={{ ...inputStyle, resize: "vertical", marginBottom: 20 }}
+            />
+          )}
         />
 
         {/* Actions */}
