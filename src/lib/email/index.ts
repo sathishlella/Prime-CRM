@@ -61,12 +61,16 @@ function baseLayout(content: string) {
 
         <!-- Header -->
         <tr><td style="background:linear-gradient(135deg,#0A0F1E 0%,#1a2744 100%);border-radius:20px 20px 0 0;padding:28px 32px;text-align:center;">
-          <div style="display:inline-flex;align-items:center;gap:12px;">
-            <div style="background:rgba(10,110,189,0.3);border:1px solid rgba(10,110,189,0.4);border-radius:12px;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;">
-              <span style="color:#fff;font-size:16px;font-weight:800;letter-spacing:-0.5px;">F1</span>
-            </div>
-            <span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">F1 Dream Jobs</span>
-          </div>
+          <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+            <tr>
+              <td style="vertical-align:middle;padding-right:12px;">
+                <img src="https://f1-dream-crm-dashboard.vercel.app/logo.png" alt="F1 Dream Jobs" width="44" height="44" style="display:block;border-radius:12px;" />
+              </td>
+              <td style="vertical-align:middle;">
+                <span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">F1 Dream Jobs</span>
+              </td>
+            </tr>
+          </table>
         </td></tr>
 
         <!-- Body -->
