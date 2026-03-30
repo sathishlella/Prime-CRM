@@ -374,6 +374,13 @@ body {
   }
 }
 
+/* ─── Mobile-only elements (hidden on desktop) ─────────── */
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
 /* ─── Scrollbar ─────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

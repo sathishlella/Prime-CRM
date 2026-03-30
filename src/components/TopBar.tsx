@@ -215,15 +215,6 @@ export default function TopBar({ user, onMenuClick }: Props) {
           {loggingOut ? "Signing out…" : "Sign out"}
         </button>
       </div>
-      
-      {/* Media query styles for responsive hamburger menu */}
-      <style jsx>{`
-        @media (min-width: 1024px) {
-          .mobile-only {
-            display: none !important;
-          }
-        }
-      `}</style>
     </header>
   );
 }
