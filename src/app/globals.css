@@ -459,7 +459,17 @@ body {
   }
   
   .users-table tbody td.action-cell {
-    display: none;
+    grid-column: 1 / -1;
+    text-align: center;
+    padding-top: 8px !important;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  
+  .users-table tbody td.action-cell .action-btn {
+    width: 100%;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
   }
   
   .users-table tbody td:nth-child(2) {
