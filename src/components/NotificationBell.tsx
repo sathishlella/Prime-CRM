@@ -80,7 +80,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
   }, [open]);
 
   return (
-    <div ref={panelRef} style={{ position: "relative" }}>
+    <div ref={panelRef} style={{ position: "relative", isolation: "isolate" }}>
       {/* Bell button */}
       <button
         onClick={() => setOpen((o) => !o)}
@@ -160,21 +160,23 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
             exit={{   opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             style={{
-              position:             "absolute",
-              top:                  "calc(100% + 10px)",
-              right:                0,
-              zIndex:               80,
-              width:                340,
-              maxHeight:            440,
-              background:           "rgba(255,255,255,0.96)",
+              position:             "fixed",
+              top:                  60,
+              right:                16,
+              left:                 16,
+              zIndex:               9999,
+              maxWidth:             340,
+              maxHeight:            "calc(100vh - 80px)",
+              background:           "rgba(255,255,255,0.98)",
               backdropFilter:       "blur(40px)",
               WebkitBackdropFilter: "blur(40px)",
               border:               "1px solid rgba(0,0,0,0.07)",
               borderRadius:         18,
-              boxShadow:            "0 12px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05)",
+              boxShadow:            "0 12px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)",
               overflow:             "hidden",
               display:              "flex",
               flexDirection:        "column",
+              marginLeft:           "auto",
             }}
           >
             {/* Header */}
