@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Avatar from "@/components/Avatar";
 import { useUIStore } from "@/lib/stores/uiStore";
 import type { AdminProfile, AdminStudent } from "../page";
@@ -40,6 +40,8 @@ export default function UsersManagementClient({
   const [selectedCounselor, setSelectedCounselor] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<{ id: string; name: string; role: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const { addToast } = useUIStore();
 
   useEffect(() => {
@@ -90,8 +92,171 @@ export default function UsersManagementClient({
     setSelectedCounselor(student.assigned_counselor_id || "__unassign__");
   }
 
+  async function handleDeleteUser() {
+    if (!deletingUser) return;
+
+    setDeleteLoading(true);
+    try {
+      const response = await fetch("/api/users/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: deletingUser.id,
+          role: deletingUser.role,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete user");
+      }
+
+      addToast(`${deletingUser.name} has been deleted successfully`, "success");
+      setDeletingUser(null);
+      // Reload to show updated data
+      window.location.reload();
+    } catch (error: any) {
+      addToast(error.message || "Failed to delete user", "error");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  function confirmDelete(user: AdminProfile | AdminStudent, role: string) {
+    setDeletingUser({
+      id: user.id,
+      name: user.profile.full_name,
+      role: role,
+    });
+  }
+
   return (
     <div>
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deletingUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+              zIndex: 100,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+            }}
+            onClick={() => !deleteLoading && setDeletingUser(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              style={{
+                background: "#fff",
+                borderRadius: 16,
+                padding: "28px 32px",
+                maxWidth: 420,
+                width: "100%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: "rgba(239,68,68,0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
+                    fontSize: 28,
+                  }}
+                >
+                  🗑️
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#1e293b", margin: "0 0 8px" }}>
+                  Delete Account?
+                </h3>
+                <p style={{ fontSize: 14, color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+                  Are you sure you want to delete <strong>{deletingUser.name}</strong>? This action cannot be undone and all associated data will be permanently removed.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  onClick={() => setDeletingUser(null)}
+                  disabled={deleteLoading}
+                  style={{
+                    flex: 1,
+                    padding: "12px 20px",
+                    borderRadius: 10,
+                    border: "1.5px solid rgba(0,0,0,0.1)",
+                    background: "transparent",
+                    color: "#64748b",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: deleteLoading ? "not-allowed" : "pointer",
+                    opacity: deleteLoading ? 0.6 : 1,
+                    fontFamily: "inherit",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={deleteLoading}
+                  style={{
+                    flex: 1,
+                    padding: "12px 20px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                    color: "#fff",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: deleteLoading ? "not-allowed" : "pointer",
+                    opacity: deleteLoading ? 0.7 : 1,
+                    fontFamily: "inherit",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  {deleteLoading ? (
+                    <>
+                      <span
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: "50%",
+                          border: "2px solid rgba(255,255,255,0.3)",
+                          borderTopColor: "#fff",
+                          animation: "spin 0.8s linear infinite",
+                          display: "inline-block",
+                        }}
+                      />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Account"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -103,7 +268,7 @@ export default function UsersManagementClient({
           User Management
         </h2>
         <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>
-          Manage all users and assign counselors to students
+          Manage all users, assign counselors to students, and delete accounts
         </p>
       </motion.div>
 
@@ -173,7 +338,7 @@ export default function UsersManagementClient({
         </div>
       )}
 
-      {/* Students Table with Counselor Assignment */}
+      {/* Students Table with Counselor Assignment and Delete */}
       {mounted && activeTab === "students" && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -318,23 +483,40 @@ export default function UsersManagementClient({
                     </span>
                   </td>
                   <td style={{ padding: "14px 16px" }}>
-                    {editingStudent !== student.id && (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {editingStudent !== student.id && (
+                        <button
+                          onClick={() => startEditing(student)}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 6,
+                            border: "1px solid rgba(59,130,246,0.2)",
+                            background: "transparent",
+                            color: "#3b82f6",
+                            fontSize: 12,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Assign Counselor
+                        </button>
+                      )}
                       <button
-                        onClick={() => startEditing(student)}
+                        onClick={() => confirmDelete(student, "student")}
                         style={{
                           padding: "6px 12px",
                           borderRadius: 6,
-                          border: "1px solid rgba(59,130,246,0.2)",
+                          border: "1px solid rgba(239,68,68,0.2)",
                           background: "transparent",
-                          color: "#3b82f6",
+                          color: "#ef4444",
                           fontSize: 12,
                           fontWeight: 500,
                           cursor: "pointer",
                         }}
                       >
-                        Assign Counselor
+                        Delete
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -343,7 +525,7 @@ export default function UsersManagementClient({
         </motion.div>
       )}
 
-      {/* All Users / Counselors / Admins Table */}
+      {/* All Users / Counselors / Admins Table with Delete */}
       {mounted && activeTab !== "students" && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -360,7 +542,7 @@ export default function UsersManagementClient({
           <table className="responsive-table users-page-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 320 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>
-                {["User", "Email", "Role", "Status", "Joined"].map((h) => (
+                {["User", "Email", "Role", "Status", "Joined", "Actions"].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -430,6 +612,25 @@ export default function UsersManagementClient({
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 12, color: "#94a3b8" }}>
                     {new Date(profile.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    {profile.role !== "admin" && (
+                      <button
+                        onClick={() => confirmDelete(profile, profile.role)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          border: "1px solid rgba(239,68,68,0.2)",
+                          background: "transparent",
+                          color: "#ef4444",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
