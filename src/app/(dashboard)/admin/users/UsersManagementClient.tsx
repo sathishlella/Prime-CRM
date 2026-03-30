@@ -175,7 +175,7 @@ export default function UsersManagementClient({
             overflow: "auto",
           }}
         >
-          <table className="responsive-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}
+          <table className="responsive-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>
                 {["Student", "University", "Assigned Counselor", "Status", "Actions"].map((h) => (
