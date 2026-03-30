@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import type { Role } from "@/lib/supabase/database.types";
@@ -144,7 +145,7 @@ export default function Sidebar({ role, mobileOpen = false, onMobileClose }: Sid
         }}
       >
         {/* ── Wordmark ── */}
-        <div style={{ padding: "0 4px 28px", display: "flex", alignItems: "center", gap: 11 }}>
+        <Link href={`/${role}`} style={{ textDecoration: "none", padding: "0 4px 28px", display: "flex", alignItems: "center", gap: 11 }}>
           {/* Logo mark */}
           <div style={{
             width:           38,
@@ -159,25 +160,20 @@ export default function Sidebar({ role, mobileOpen = false, onMobileClose }: Sid
             position:        "relative",
             overflow:        "hidden",
           }}>
-            {/* Speed accent line */}
-            <div style={{
-              position:   "absolute",
-              top:        -4,
-              right:      -4,
-              width:      18,
-              height:     18,
-              background: "linear-gradient(135deg, #0A6EBD, #38BDF8)",
-              borderRadius: "50%",
-              opacity:    0.7,
-              filter:     "blur(6px)",
-            }} />
-            <span style={{ color: "#fff", fontSize: 13, fontWeight: 800, letterSpacing: "-0.5px", position: "relative", zIndex: 1 }}>F1</span>
+            <Image
+              src="/logo.svg"
+              alt="F1 Dream Jobs"
+              width={24}
+              height={24}
+              style={{ position: "relative", zIndex: 1 }}
+              priority
+            />
           </div>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#0A0F1E", letterSpacing: "-0.3px", lineHeight: 1.2 }}>F1 Dream Jobs</div>
             <div style={{ fontSize: 10.5, color: "#9CA3AF", fontWeight: 500, marginTop: 1 }}>{ROLE_LABEL[role]}</div>
           </div>
-        </div>
+        </Link>
 
         {/* ── Nav section label ── */}
         <div style={{ fontSize: 10, fontWeight: 700, color: "#C4CADB", textTransform: "uppercase", letterSpacing: "0.9px", padding: "0 12px", marginBottom: 6 }}>

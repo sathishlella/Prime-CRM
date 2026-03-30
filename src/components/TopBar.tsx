@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/Avatar";
@@ -126,14 +127,14 @@ export default function TopBar({ user, onMenuClick }: Props) {
           overflow:       "hidden",
           position:       "relative",
         }}>
-          <div style={{
-            position: "absolute", top: -3, right: -3,
-            width: 14, height: 14,
-            background: "rgba(10,110,189,0.7)",
-            borderRadius: "50%",
-            filter: "blur(5px)",
-          }} />
-          <span style={{ color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "-0.3px", position: "relative", zIndex: 1 }}>F1</span>
+          <Image
+            src="/logo.svg"
+            alt="F1 Dream Jobs"
+            width={20}
+            height={20}
+            style={{ position: "relative", zIndex: 1 }}
+            priority
+          />
         </div>
       </div>
 
