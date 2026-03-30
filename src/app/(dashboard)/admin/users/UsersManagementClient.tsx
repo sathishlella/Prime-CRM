@@ -417,7 +417,7 @@ export default function UsersManagementClient({
                     </span>
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 12, color: "#94a3b8" }}>
-                    {new Date(profile.created_at).toLocaleDateString()}
+                    {new Date(profile.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </td>
                 </tr>
               ))}
