@@ -435,13 +435,40 @@ body {
     box-shadow:    var(--shadow-sm);
   }
   .responsive-table tbody td {
-    display:         flex;
-    align-items:     center;
-    justify-content: space-between;
+    display:         block;
     padding:         6px 0;
     border:          none;
     font-size:       13px;
   }
+  
+  /* Students table specific responsive layout */
+  .students-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 16px;
+    align-items: center;
+  }
+  
+  .students-table tbody td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  
+  .students-table tbody td:nth-child(2) {
+    text-align: left;
+    font-weight: 500;
+  }
+  
+  .students-table tbody td:nth-child(3) {
+    text-align: right;
+  }
+  
+  .students-table tbody td:last-child {
+    display: none;
+  }
+  
   .responsive-table tbody td::before {
     content:        attr(data-label);
     font-weight:    600;
@@ -449,6 +476,8 @@ body {
     font-size:      10.5px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display:        block;
+    margin-bottom:  2px;
   }
   .pipeline-legend { flex-wrap: wrap; gap: 8px !important; }
   .modal-card {
