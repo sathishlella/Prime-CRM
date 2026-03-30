@@ -271,7 +271,16 @@ export default function StudentDashboardClient({
       </div>
 
       {/* ── Filter tabs ── */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 18, flexWrap: "wrap" }}>
+      <div style={{ 
+        display: "flex", 
+        gap: 6, 
+        marginBottom: 18, 
+        overflowX: "auto",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch",
+        paddingBottom: 4,
+      }} className="hide-scrollbar">
         {FILTERS.map((f) => {
           const active = filter === f.key;
           return (
@@ -292,6 +301,8 @@ export default function StudentDashboardClient({
                   : "rgba(255,255,255,0.45)",
                 color:       active ? "#fff" : "#64748b",
                 boxShadow:   active ? "0 3px 12px rgba(59,130,246,0.22)" : "none",
+                flexShrink:  0,
+                whiteSpace:  "nowrap",
               }}
             >
               {f.label}
