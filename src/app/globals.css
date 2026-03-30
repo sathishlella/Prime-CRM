@@ -680,10 +680,103 @@ body {
   }
 }
 
+/* ─── Modal: desktop = centered, mobile = bottom-sheet ──── */
+/* On desktop show centered card, hide bottom-sheet */
+.modal-mobile-sheet   { display: none !important; }
+.modal-desktop-wrapper { display: flex !important; }
+
+@media (max-width: 640px) {
+  /* On mobile show bottom-sheet, hide centered card */
+  .modal-mobile-sheet    { display: flex !important; }
+  .modal-desktop-wrapper { display: none !important; }
+}
+
 /* ─── Mobile-only elements (hidden on desktop) ─────────── */
 @media (min-width: 1024px) {
   .mobile-only {
     display: none !important;
+  }
+}
+
+/* ─── Mobile: hide text labels, compact buttons ─────────── */
+@media (max-width: 480px) {
+  .topbar-signout-label { display: none; }
+  .topbar-user-name     { display: none; }
+
+  /* Stat grids always 2-col */
+  .stat-grid-2, .stat-grid-3, .stat-grid-4, .stat-grid-5,
+  [class*="stat-grid"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+/* ─── Table scroll containers ───────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px;
+}
+.table-scroll table {
+  min-width: 560px;
+}
+
+/* ─── Application cards: full-width on mobile ───────────── */
+@media (max-width: 640px) {
+  .app-card-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Filter pills: horizontal scroll, no wrap */
+  .filter-pills {
+    overflow-x: auto;
+    flex-wrap:  nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .filter-pills button { flex-shrink: 0; }
+
+  /* Create-user form: single column on mobile */
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Role picker: single column */
+  .role-picker {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Counselor cards: single col */
+  .counselor-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Pipeline legend: wrap */
+  .pipeline-legend {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Back button: hide text on very small */
+  .back-btn-label { display: none; }
+
+  /* Stat card value: smaller on mobile */
+  .stat-value { font-size: 28px !important; }
+
+  /* Page headers: tighter */
+  .page-header {
+    flex-direction: column !important;
+    align-items:    flex-start !important;
+    gap:            12px !important;
+  }
+
+  /* Sidebar width on mobile */
+  .sidebar-mobile { width: 260px !important; }
+
+  /* Student drill-down mini stats: always 2 cols */
+  .drill-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 

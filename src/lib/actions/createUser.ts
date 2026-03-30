@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient, createServerClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export type CreateUserState = {
   error?: string;
@@ -128,6 +129,13 @@ export async function createUserAction(
     if (studentError) {
       return { error: `Student record failed: ${studentError.message}` };
     }
+  }
+
+  // ── 7. Send welcome email (non-blocking — don't let failure stop redirect) ──
+  try {
+    await sendWelcomeEmail(email, { name: full_name, role, email });
+  } catch {
+    // Email failure is silent — account is already created
   }
 
   redirect("/admin?created=1");
