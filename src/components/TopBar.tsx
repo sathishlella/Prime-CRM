@@ -92,11 +92,11 @@ export default function TopBar({ user, onMenuClick }: Props) {
     >
       {/* Left */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {/* Hamburger menu - mobile only */}
+        {/* Hamburger menu - mobile only (hidden on lg screens) */}
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            className="lg:hidden"
+            className="mobile-only"
             style={{
               background: "none",
               border:     "none",
@@ -117,7 +117,7 @@ export default function TopBar({ user, onMenuClick }: Props) {
         )}
 
         {/* F1 logo mark - mobile only */}
-        <div className="lg:hidden" style={{
+        <div className="mobile-only" style={{
           width:          32,
           height:         32,
           borderRadius:   10,
@@ -215,6 +215,15 @@ export default function TopBar({ user, onMenuClick }: Props) {
           {loggingOut ? "Signing out…" : "Sign out"}
         </button>
       </div>
+      
+      {/* Media query styles for responsive hamburger menu */}
+      <style jsx>{`
+        @media (min-width: 1024px) {
+          .mobile-only {
+            display: none !important;
+          }
+        }
+      `}</style>
     </header>
   );
 }
