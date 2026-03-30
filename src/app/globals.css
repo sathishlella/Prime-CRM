@@ -327,6 +327,19 @@ body {
 @media (max-width: 768px) {
   .stat-grid-4, .stat-grid-5, .stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  .stats-grid > div {
+    padding: 12px 14px !important;
+  }
+  
+  .stats-grid > div > div:first-child {
+    font-size: 20px !important;
+  }
+  
+  .stats-grid > div > div:last-child {
+    font-size: 10px !important;
   }
   
   /* Hide scrollbar for tabs */
