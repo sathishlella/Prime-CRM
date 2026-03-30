@@ -122,7 +122,7 @@ function AddApplicationModal({
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddAppForm>({
     resolver: zodResolver(addAppSchema),
-    defaultValues: { company_name: "", job_role: "", job_link: "", resume_used: "", job_description: "", notes: "" },
+    defaultValues: { student_id: "", company_name: "", job_role: "", job_link: "", resume_used: "", job_description: "", notes: "" },
   });
 
   const watchedStudent = watch("student_id");
