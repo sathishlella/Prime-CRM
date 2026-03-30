@@ -103,7 +103,7 @@ export default function UsersManagementClient({
       </motion.div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+      <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
           { label: "Total Users", value: allProfiles.length, color: "#64748b" },
           { label: "Students", value: allProfiles.filter((p) => p.role === "student").length, color: "#10b981" },
@@ -133,7 +133,7 @@ export default function UsersManagementClient({
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12 }}>
+      <div className="tabs-container" style={{ display: "flex", gap: 8, marginBottom: 20, borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {[
           { key: "all", label: "All Users" },
           { key: "students", label: "Students" },
@@ -172,10 +172,10 @@ export default function UsersManagementClient({
             border: "1px solid rgba(255,255,255,0.65)",
             borderRadius: 18,
             boxShadow: "0 4px 24px rgba(0,0,0,0.03)",
-            overflow: "hidden",
+            overflow: "auto",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="responsive-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>
                 {["Student", "University", "Assigned Counselor", "Status", "Actions"].map((h) => (

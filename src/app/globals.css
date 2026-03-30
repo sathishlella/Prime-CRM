@@ -325,8 +325,50 @@ body {
 
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .stat-grid-4, .stat-grid-5 {
+  .stat-grid-4, .stat-grid-5, .stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Hide scrollbar for tabs */
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+  .tabs-container {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+  
+  /* Ensure tabs don't wrap */
+  .tabs-container button {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  
+  /* Counselor cards - single column on mobile */
+  .counselor-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Counselor stats grid - ensure proper sizing */
+  .counselor-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  
+  /* Responsive table wrapper */
+  .responsive-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Table font size reduction on mobile */
+  .responsive-table th,
+  .responsive-table td {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+  
+  .responsive-table th {
+    font-size: 10px !important;
   }
   .responsive-table thead { display: none; }
   .responsive-table tbody tr {

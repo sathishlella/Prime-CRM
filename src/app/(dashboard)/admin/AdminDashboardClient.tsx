@@ -109,7 +109,7 @@ function CounselorCard({
           <div style={{ fontSize: 11.5, color: "#94a3b8" }}>{counselor.email}</div>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+      <div className="counselor-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
         {[
           { label: "Students",     value: myStudentIds.length },
           { label: "Applications", value: myApps.length       },
@@ -489,7 +489,7 @@ export default function AdminDashboardClient({
       </motion.div>
 
       {/* ── Stat cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 22 }}>
+      <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 22 }}>
         <StatCard icon="🎓" value={counts.students}   label="Total Students"   delay={0}   />
         <StatCard icon="📋" value={counts.counselors} label="Counselors"        delay={70}  />
         <StatCard icon="📊" value={counts.total}      label="Applications"      delay={140} />
@@ -500,7 +500,7 @@ export default function AdminDashboardClient({
       <PipelineBar apps={apps} />
 
       {/* ── Tabs ── */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+      <div className="tabs-container" style={{ display: "flex", gap: 6, marginBottom: 20, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {([["overview", "Students & Team"], ["users", "User Management"]] as [Tab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             style={{ padding: "8px 18px", borderRadius: 10, border: tab === key ? "none" : "1px solid rgba(0,0,0,0.07)", fontFamily: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.22s", background: tab === key ? "#0A0F1E" : "#FFFFFF", color: tab === key ? "#fff" : "#6B7280", letterSpacing: "-0.01em" }}
@@ -516,7 +516,7 @@ export default function AdminDashboardClient({
             {counselors.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 12 }}>Team Performance</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12 }}>
+                <div className="counselor-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12 }}>
                   {counselors.map((c, i) => (
                     <CounselorCard key={c.id} counselor={c} students={students} apps={apps} index={i} />
                   ))}
@@ -526,8 +526,8 @@ export default function AdminDashboardClient({
 
             {/* All Students */}
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 12 }}>All Students</div>
-            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.65)", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.03)" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.65)", borderRadius: 18, overflow: "auto", boxShadow: "0 4px 24px rgba(0,0,0,0.03)" }}>
+              <table className="responsive-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
                 <thead>
                   <tr style={{ background: "rgba(248,250,255,0.6)", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                     {["Student", "Counselor", "Applications", ""].map((h) => (
