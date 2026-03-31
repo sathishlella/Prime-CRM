@@ -31,7 +31,9 @@ const STATUS_LABEL: Record<ApplicationStatus, string> = {
 const ALL_STATUSES: ApplicationStatus[] = ["applied","in_progress","interview","rejected","offered"];
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const date = new Date(iso);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 function initials(name: string) {
   return name.split(" ").map((n) => n[0] ?? "").slice(0, 2).join("").toUpperCase();

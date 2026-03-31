@@ -613,7 +613,11 @@ export default function UsersManagementClient({
                     </span>
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 12, color: "#94a3b8" }}>
-                    {new Date(profile.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    {(() => {
+  const date = new Date(profile.created_at);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+})()}
                   </td>
                   <td style={{ padding: "14px 16px" }}>
                     {profile.role !== "admin" && (

@@ -10,8 +10,14 @@ const TYPE_ICON: Record<string, string>  = { resume: "📄", cover_letter: "✉�
 const TYPE_LABEL: Record<string, string> = { resume: "Resume", cover_letter: "Cover Letter", jd: "Job Description", other: "Document" };
 const TYPE_COLOR: Record<string, string> = { resume: "#3b82f6", cover_letter: "#10b981", jd: "#f59e0b", other: "#94a3b8" };
 
+// Client-safe date formatter to avoid hydration mismatches
 function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const date = new Date(iso);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${month} ${day}, ${year}`;
 }
 
 function DocCard({ doc, index }: { doc: StudentDoc; index: number }) {
