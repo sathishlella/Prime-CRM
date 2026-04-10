@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
+import EvaluationCard from "@/components/EvaluationCard";
+import InterviewPrepCard from "@/components/InterviewPrepCard";
 import { useRealtime } from "@/lib/hooks/useRealtime";
 import { useUIStore } from "@/lib/stores/uiStore";
+import { createClient } from "@/lib/supabase/client";
+import { getEvaluationByApplication } from "@/lib/api/evaluations";
+import { getInterviewPrep } from "@/lib/api/interviewPrep";
 import type { ApplicationStatus } from "@/lib/supabase/database.types";
 import type { Application } from "./page";
 
@@ -35,6 +40,23 @@ function formatDate(iso: string) {
 // ─── Application Card ─────────────────────────────────────────────────────────
 function AppCard({ app, index }: { app: Application; index: number }) {
   const [open, setOpen] = useState(false);
+  const [evaluation, setEvaluation] = useState<Record<string, unknown> | null>(null);
+  const [prep, setPrep] = useState<Record<string, unknown> | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!open || loaded) return;
+    const supabase = createClient();
+    Promise.all([
+      getEvaluationByApplication(supabase, app.id),
+      getInterviewPrep(supabase, app.id),
+    ])
+      .then(([evalData, prepData]) => {
+        setEvaluation(evalData as Record<string, unknown> | null);
+        setPrep(prepData as Record<string, unknown> | null);
+      })
+      .finally(() => setLoaded(true));
+  }, [open, loaded, app.id]);
 
   return (
     <motion.div
@@ -187,6 +209,22 @@ function AppCard({ app, index }: { app: Application; index: number }) {
               <div style={{ fontSize: 11, color: "#94a3b8" }}>
                 Last updated: {formatDate(app.updated_at)}
               </div>
+
+              {/* AI Evaluation (student view — compensation hidden) */}
+              {evaluation && (
+                <EvaluationCard
+                  evaluation={(evaluation as { blocks?: unknown; overall_score: number; grade: string; archetype: string; recommendation: string }) as Parameters<typeof EvaluationCard>[0]["evaluation"]}
+                  compact
+                  hideCompensation
+                />
+              )}
+
+              {/* Interview prep (when available) */}
+              {prep && (prep as { prep_data?: Record<string, unknown> }).prep_data && (
+                <InterviewPrepCard
+                  prepData={(prep as { prep_data: Parameters<typeof InterviewPrepCard>[0]["prepData"] }).prep_data}
+                />
+              )}
             </div>
           </motion.div>
         )}

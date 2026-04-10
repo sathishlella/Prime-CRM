@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 interface StatCardProps {
   icon?:  string;   // kept for API compatibility, no longer rendered
-  value:  number;
+  value:  number | string;
   label:  string;
   delay?: number;
   color?: string;
@@ -40,7 +40,9 @@ function useCountUp(target: number, duration = 900, startDelay = 0) {
 }
 
 export default function StatCard({ value, label, delay = 0, color = "#0A6EBD" }: StatCardProps) {
-  const count = useCountUp(value, 900, delay);
+  const isNumber = typeof value === "number";
+  const count = useCountUp(isNumber ? (value as number) : 0, 900, delay);
+  const display = isNumber ? count : value;
 
   return (
     <motion.div
@@ -80,7 +82,7 @@ export default function StatCard({ value, label, delay = 0, color = "#0A6EBD" }:
         marginBottom:       8,
         marginTop:          4,
       }}>
-        {count}
+        {display}
       </div>
 
       {/* Label */}

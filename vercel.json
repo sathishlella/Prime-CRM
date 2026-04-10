@@ -1,0 +1,25 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scan",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/generate-cv/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/evaluate/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/interview-prep/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/scan/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/cron/scan/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}

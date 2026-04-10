@@ -50,6 +50,30 @@ function IconPerson() {
     </svg>
   );
 }
+function IconDoc() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="currentColor" opacity="0.85"/>
+      <path d="M10 2v3h3" stroke="#fff" strokeWidth="1" fill="none"/>
+    </svg>
+  );
+}
+function IconSparkle() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1L9.5 6.5L15 8L9.5 9.5L8 15L6.5 9.5L1 8L6.5 6.5L8 1Z" fill="currentColor" opacity="0.85"/>
+    </svg>
+  );
+}
+function IconRadar() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.85"/>
+      <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.6"/>
+      <circle cx="8" cy="8" r="1" fill="currentColor"/>
+    </svg>
+  );
+}
 function IconChevron() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -61,17 +85,20 @@ function IconChevron() {
 // ─── Nav config ───────────────────────────────────────────────────────────────
 const NAV: Record<Role, { href: string; icon: React.ReactNode; label: string }[]> = {
   student: [
-    { href: "/student",           icon: <IconGrid />,   label: "Dashboard"    },
-    { href: "/student/documents", icon: <IconFolder />, label: "My Documents" },
+    { href: "/student",           icon: <IconGrid />,    label: "Dashboard"    },
+    { href: "/student/cvs",       icon: <IconDoc />,     label: "My CVs"       },
+    { href: "/student/documents", icon: <IconFolder />,  label: "My Documents" },
   ],
   counselor: [
-    { href: "/counselor",          icon: <IconGrid />,  label: "Dashboard"   },
-    { href: "/counselor/students", icon: <IconUsers />, label: "My Students" },
+    { href: "/counselor",          icon: <IconGrid />,    label: "Dashboard"   },
+    { href: "/counselor/students", icon: <IconUsers />,   label: "My Students" },
+    { href: "/counselor/leads",    icon: <IconSparkle />, label: "Job Leads"   },
   ],
   admin: [
-    { href: "/admin",             icon: <IconGrid />,   label: "Dashboard"   },
-    { href: "/admin/users",       icon: <IconUsers />,  label: "Users"       },
-    { href: "/admin/analytics",   icon: <IconTrend />,  label: "Analytics"   },
+    { href: "/admin",             icon: <IconGrid />,    label: "Dashboard"   },
+    { href: "/admin/users",       icon: <IconUsers />,   label: "Users"       },
+    { href: "/admin/scanner",     icon: <IconRadar />,   label: "Scanner"     },
+    { href: "/admin/analytics",   icon: <IconTrend />,   label: "Analytics"   },
   ],
 };
 
@@ -234,9 +261,9 @@ export default function Sidebar({ role, mobileOpen = false, onMobileClose }: Sid
         {/* ── Footer ── */}
         <div style={{ padding: "16px 12px 0", borderTop: "1px solid rgba(0,0,0,0.05)" }}>
           <div style={{ fontSize: 10.5, color: "#C4CADB", fontWeight: 500, lineHeight: 1.5 }}>
-            F1 Dream Jobs CRM
+            Prime CRM
             <br />
-            <span style={{ color: "#DFE3EC" }}>v1.0 · All rights reserved</span>
+            <span style={{ color: "#DFE3EC" }}>by F1 Dream Jobs · v2.0</span>
           </div>
         </div>
       </aside>

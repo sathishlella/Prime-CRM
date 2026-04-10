@@ -1,6 +1,6 @@
 {
-  "name": "consultpro-crm",
-  "version": "0.1.0",
+  "name": "prime-crm",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,11 +10,15 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.3",
     "@hookform/resolvers": "3.9.0",
+    "@sparticuz/chromium": "^131.0.1",
     "@supabase/ssr": "0.3.0",
     "@supabase/supabase-js": "2.44.4",
     "framer-motion": "11.3.8",
+    "marked": "^14.1.3",
     "next": "^14.2.35",
+    "playwright-core": "^1.48.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "7.52.1",

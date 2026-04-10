@@ -9,10 +9,14 @@ import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
 import Avatar from "@/components/Avatar";
 import Modal from "@/components/Modal";
+import EvaluationCard from "@/components/EvaluationCard";
+import GenerateCVModal from "@/components/GenerateCVModal";
 import { useRealtime } from "@/lib/hooks/useRealtime";
 import { useUIStore } from "@/lib/stores/uiStore";
 import { createApplication, updateApplicationStatus } from "@/lib/api/applications";
 import { getStudentResumes, uploadDocument } from "@/lib/api/documents";
+import { evaluateJD } from "@/lib/api/evaluations";
+import { generateInterviewPrep } from "@/lib/api/interviewPrep";
 import type { ApplicationStatus } from "@/lib/supabase/database.types";
 import type { CounselorStudent, CounselorApplication } from "./page";
 
@@ -118,6 +122,8 @@ function AddApplicationModal({
   const [resumes,        setResumes]        = useState<{ id: string; file_name: string }[]>([]);
   const [loadingRes,     setLoadingRes]     = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
+  const [evaluating, setEvaluating] = useState(false);
+  const [evaluation, setEvaluation] = useState<Record<string, unknown> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddAppForm>({
@@ -157,6 +163,31 @@ function AddApplicationModal({
     addToast(`Uploaded: ${data.file_name}`, "success");
     // Reset file input so same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleEvaluate() {
+    const values = watch();
+    if (!values.student_id || !values.job_description) {
+      addToast("Select a student and paste the JD first.", "error");
+      return;
+    }
+    setEvaluating(true);
+    try {
+      const result = await evaluateJD(values.student_id, values.job_description, {
+        company_name: values.company_name || undefined,
+        job_role: values.job_role || undefined,
+        job_url: values.job_link || undefined,
+      });
+      setEvaluation(result);
+      if (!values.company_name && result.evaluation?.blocks?.a_role_summary) {
+        // Keep user-entered values — AI evaluation is advisory
+      }
+      addToast(`AI score: ${result.evaluation?.overall_score}/5 (${result.evaluation?.grade})`, "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Evaluation failed", "error");
+    } finally {
+      setEvaluating(false);
+    }
   }
 
   async function onSubmit(data: AddAppForm) {
@@ -374,6 +405,38 @@ function AddApplicationModal({
           )}
         />
 
+        {/* AI Evaluate button */}
+        <div style={{ marginTop: 4, marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={handleEvaluate}
+            disabled={evaluating}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(139,92,246,0.3)",
+              background: evaluating ? "rgba(139,92,246,0.06)" : "#fff",
+              color: "#8b5cf6",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: evaluating ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {evaluating ? "Evaluating…" : "✨ AI Evaluate"}
+          </button>
+        </div>
+
+        {/* Evaluation result */}
+        {evaluation?.evaluation ? (
+          <div style={{ marginBottom: 16 }}>
+            <EvaluationCard evaluation={evaluation.evaluation as Parameters<typeof EvaluationCard>[0]["evaluation"]} compact />
+          </div>
+        ) : null}
+
         {/* Internal notes */}
         <label style={labelStyle}>Internal Notes (not visible to student)</label>
         <Controller
@@ -446,6 +509,7 @@ export default function CounselorDashboardClient({
   const [students]                = useState<CounselorStudent[]>(initialStudents);
   const [modalOpen, setModalOpen] = useState(false);
   const [search,    setSearch]    = useState("");
+  const [cvModalApp, setCvModalApp] = useState<CounselorApplication | null>(null);
   const { addToast } = useUIStore();
 
   // ── Real-time ─────────────────────────────────────────────────────────
@@ -486,7 +550,23 @@ export default function CounselorDashboardClient({
     }
     setApps((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
     addToast(`Status updated to ${status.replace("_", " ")}`, "success");
-  }, [addToast]);
+
+    // Auto-trigger interview prep when status becomes "interview"
+    if (status === "interview") {
+      const app = apps.find((a) => a.id === id);
+      if (app) {
+        generateInterviewPrep(
+          id,
+          app.student_id,
+          app.company_name,
+          app.job_role,
+          app.job_description ?? undefined
+        )
+          .then(() => addToast("Interview prep generated", "success"))
+          .catch(() => addToast("Interview prep generation failed", "error"));
+      }
+    }
+  }, [addToast, apps]);
 
   // ── Stats ─────────────────────────────────────────────────────────────
   const counts = {
@@ -619,7 +699,7 @@ export default function CounselorDashboardClient({
           <table className="responsive-table counselor-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", background: "rgba(248,250,255,0.6)" }}>
-                {["Student", "Company / Role", "Resume", "Status", "Date"].map((h) => (
+                {["Student", "Company / Role", "Resume", "Status", "Date", "Actions"].map((h) => (
                   <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 10.5, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>
                     {h}
                   </th>
@@ -629,7 +709,7 @@ export default function CounselorDashboardClient({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: "48px 20px", textAlign: "center", color: "#94a3b8", fontSize: 13.5 }}>
+                  <td colSpan={6} style={{ padding: "48px 20px", textAlign: "center", color: "#94a3b8", fontSize: 13.5 }}>
                     {search ? "No applications match your search." : "No applications yet. Click \"+ Add Application\" to get started."}
                   </td>
                 </tr>
@@ -693,6 +773,27 @@ export default function CounselorDashboardClient({
                       <td style={{ padding: "12px 16px", verticalAlign: "middle", fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap" }}>
                         {formatDate(app.applied_at)}
                       </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>
+                        <button
+                          onClick={() => setCvModalApp(app)}
+                          style={{
+                            padding: "5px 10px",
+                            borderRadius: 8,
+                            border: "1px solid rgba(139,92,246,0.3)",
+                            background: "rgba(139,92,246,0.06)",
+                            color: "#8b5cf6",
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          ✨ Generate CV
+                        </button>
+                      </td>
                     </motion.tr>
                   );
                 })
@@ -719,7 +820,7 @@ export default function CounselorDashboardClient({
                         </div>
                       </div>
                     </td>
-                    <td colSpan={3} style={{ padding: "12px 16px", verticalAlign: "middle" }}>
+                    <td colSpan={4} style={{ padding: "12px 16px", verticalAlign: "middle" }}>
                       <span style={{ fontSize: 12.5, color: "#cbd5e1", fontStyle: "italic" }}>
                         No applications yet
                       </span>
@@ -759,6 +860,19 @@ export default function CounselorDashboardClient({
         counselorId={counselorId}
         onAdded={(app) => setApps((prev) => [app, ...prev])}
       />
+
+      {/* ── Generate CV Modal ── */}
+      {cvModalApp && (
+        <GenerateCVModal
+          studentId={cvModalApp.student_id}
+          studentName={getStudent(cvModalApp.student_id)?.profile.full_name ?? "Student"}
+          applicationId={cvModalApp.id}
+          initialJD={cvModalApp.job_description ?? ""}
+          initialCompany={cvModalApp.company_name}
+          initialRole={cvModalApp.job_role}
+          onClose={() => setCvModalApp(null)}
+        />
+      )}
     </div>
   );
 }
