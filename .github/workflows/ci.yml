@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: type-check · lint · test · build
+    runs-on: ubuntu-latest
+
+    env:
+      # Supabase — point at a test project or use dummy values for build-only CI.
+      # Real integration tests require secrets to be set in the repo.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key' }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
+      # AI providers — unit tests mock these; build needs any non-empty value
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || 'placeholder' }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'placeholder' }}
+      # Sentry — optional; CI skips upload when DSN is absent
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN || '' }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN || '' }}
+      # Misc
+      CRON_SECRET: ${{ secrets.CRON_SECRET || 'placeholder' }}
+      NEXT_PUBLIC_DEMO_MODE: 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
