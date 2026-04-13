@@ -23,7 +23,8 @@ import {
 } from "@/lib/ai/prompts/interview-prep";
 import { buildHTML, generatePDFFromHTML, normalizeTextForATS } from "@/lib/ai/cv-generator";
 import * as Sentry from "@sentry/nextjs";
-import { logger } from "@/lib/infra/logger";
+import { createLogger } from "@/lib/logging/logger";
+const logger = createLogger("executor", "/lib/agent/executor");
 
 const admin = createAdminClient;
 
@@ -100,7 +101,7 @@ export async function executeEvaluateStep(
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (err) {
-    logger.error({ requestId, error: String(err) }, "executeEvaluateStep failed");
+    logger.error("executeEvaluateStep failed", { requestId, error: String(err) });
     Sentry.captureException(err);
     return { ok: false, error: String(err) };
   }
@@ -243,7 +244,7 @@ export async function executeGenCvStep(
     if (cvError) return { ok: false, error: cvError.message };
     return { ok: true, cv_id: cvRecord!.id };
   } catch (err) {
-    logger.error({ requestId, error: String(err) }, "executeGenCvStep failed");
+    logger.error("executeGenCvStep failed", { requestId, error: String(err) });
     Sentry.captureException(err);
     return { ok: false, error: String(err) };
   }
@@ -302,7 +303,7 @@ export async function executeGenPrepStep(
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (err) {
-    logger.error({ requestId, error: String(err) }, "executeGenPrepStep failed");
+    logger.error("executeGenPrepStep failed", { requestId, error: String(err) });
     Sentry.captureException(err);
     return { ok: false, error: String(err) };
   }
