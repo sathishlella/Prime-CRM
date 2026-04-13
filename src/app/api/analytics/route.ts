@@ -69,7 +69,8 @@ export async function GET() {
             })),
             totalStudents: studentsRes.count || 0,
             totalApplications: totalApps,
-          })
+          }),
+          { feature: "pattern-analysis", userId: user.id }
         );
         aiInsights = data;
       } catch {

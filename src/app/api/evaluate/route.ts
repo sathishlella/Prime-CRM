@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     const { data: evaluation, usage } = await callClaude<EvaluationResult>(
       systemPrompt,
       userPrompt,
-      { maxTokens: 8192 }
+      { feature: "evaluate", maxTokens: 8192, userId: user.id }
     );
 
     // Create application if it doesn't exist

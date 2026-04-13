@@ -1,90 +1,67 @@
-import Anthropic from "@anthropic-ai/sdk";
+/**
+ * Legacy compatibility shim — delegates to the multi-provider router.
+ *
+ * @deprecated Import from `@/lib/ai/router` directly. This shim exists so the
+ * 5 historic call sites (api/evaluate, api/generate-cv, api/interview-prep,
+ * api/analytics, lib/ai/cv-parser) keep working with minimal churn during the
+ * migration. New code MUST go through `aiJson` / `aiText` from the router.
+ *
+ * The `feature` option is required so the router can apply the correct
+ * fallback policy (Groq fallback for evaluate/interview-prep/etc.; hard fail
+ * for cv-generate / cv-parse).
+ */
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
-const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
-const MAX_RETRIES = 3;
+import { aiJson, aiText } from "./router";
+import type { AiFeature, AiUsage } from "./providers/types";
 
 export interface ClaudeResponse<T> {
   data: T;
-  usage: { input_tokens: number; output_tokens: number };
+  usage: AiUsage;
+}
+
+export interface ClaudeCallOptions {
+  /** Required: drives fallback policy and rate-limit bucket. */
+  feature: AiFeature;
+  maxTokens?: number;
+  /** Pass-through for logging / cost attribution. */
+  userId?: string;
+  requestId?: string;
 }
 
 export async function callClaude<T>(
   systemPrompt: string,
   userPrompt: string,
-  opts?: { maxTokens?: number }
+  opts: ClaudeCallOptions
 ): Promise<ClaudeResponse<T>> {
-  const maxTokens = opts?.maxTokens || 4096;
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const response = await client.messages.create({
-        model: MODEL,
-        max_tokens: maxTokens,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      });
-
-      const textBlock = response.content.find((b) => b.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        throw new Error("No text content in Claude response");
-      }
-
-      // Extract JSON from response (handle markdown code blocks)
-      let jsonStr = textBlock.text.trim();
-      const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonStr = jsonMatch[1].trim();
-      }
-
-      const data = JSON.parse(jsonStr) as T;
-
-      return {
-        data,
-        usage: {
-          input_tokens: response.usage.input_tokens,
-          output_tokens: response.usage.output_tokens,
-        },
-      };
-    } catch (err) {
-      lastError = err as Error;
-      if (attempt < MAX_RETRIES - 1) {
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
-      }
-    }
-  }
-
-  throw lastError;
+  const result = await aiJson<T>({
+    feature: opts.feature,
+    system: systemPrompt,
+    user: userPrompt,
+    maxTokens: opts.maxTokens,
+    userId: opts.userId,
+    requestId: opts.requestId,
+  });
+  return {
+    data: result.data,
+    usage: result.usage,
+  };
 }
 
 export async function callClaudeText(
   systemPrompt: string,
   userPrompt: string,
-  opts?: { maxTokens?: number }
-): Promise<{ text: string; usage: { input_tokens: number; output_tokens: number } }> {
-  const maxTokens = opts?.maxTokens || 4096;
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: maxTokens,
+  opts: ClaudeCallOptions
+): Promise<{ text: string; usage: AiUsage }> {
+  const result = await aiText({
+    feature: opts.feature,
     system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
+    user: userPrompt,
+    maxTokens: opts.maxTokens,
+    userId: opts.userId,
+    requestId: opts.requestId,
   });
-
-  const textBlock = response.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("No text content in Claude response");
-  }
-
   return {
-    text: textBlock.text,
-    usage: {
-      input_tokens: response.usage.input_tokens,
-      output_tokens: response.usage.output_tokens,
-    },
+    text: result.text,
+    usage: result.usage,
   };
 }

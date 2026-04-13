@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         candidateProfile?.cv_markdown || null,
         candidateProfile?.skills || []
       ),
-      { maxTokens: 8192 }
+      { feature: "interview-prep", maxTokens: 8192, userId: user.id }
     );
 
     // Store

@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         job_description,
         studentProfile.full_name
       ),
-      { maxTokens: 8192 }
+      { feature: "cv-generate", maxTokens: 8192, userId: user.id }
     );
 
     // Build HTML
