@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { callClaude } from "@/lib/ai/claude";
 import {
@@ -6,70 +5,79 @@ import {
   buildPatternAnalysisSystemPrompt,
   buildPatternAnalysisUserPrompt,
 } from "@/lib/ai/prompts/pattern-analysis";
-import { withApi } from "@/lib/infra/withApi";
-import { logger } from "@/lib/infra/logger";
+import { withApi } from "@/lib/http/withApi";
 
 export const GET = withApi(
-  async ({ user, requestId }) => {
-    const supabase = createServerClient();
+  { requireRole: "admin" },
+  async ({ user, requestId, logger }) => {
+    try {
+      logger.info("fetching analytics");
 
-    const [funnelRes, scoreRes, archetypeRes, studentsRes, appsRes] =
-      await Promise.all([
-        supabase.rpc("application_funnel"),
-        supabase.rpc("score_distribution"),
-        supabase.rpc("archetype_performance"),
-        supabase.from("students").select("id", { count: "exact", head: true }),
-        supabase.from("applications").select("id", { count: "exact", head: true }),
-      ]);
+      const supabase = createServerClient();
 
-    const funnel = (funnelRes.data || []) as Array<{ status: string; count: number }>;
-    const scoreDistribution = (scoreRes.data || []) as Array<{ bucket: string; count: number }>;
-    const archetypePerformance = (archetypeRes.data || []) as Array<{
-      archetype: string;
-      total: number;
-      applied: number;
-      interviews: number;
-      offers: number;
-    }>;
+      const [funnelRes, scoreRes, archetypeRes, studentsRes, appsRes] =
+        await Promise.all([
+          supabase.rpc("application_funnel"),
+          supabase.rpc("score_distribution"),
+          supabase.rpc("archetype_performance"),
+          supabase.from("students").select("id", { count: "exact", head: true }),
+          supabase.from("applications").select("id", { count: "exact", head: true }),
+        ]);
 
-    let aiInsights: PatternAnalysisResult | null = null;
-    const totalApps = appsRes.count || 0;
+      const funnel = (funnelRes.data || []) as Array<{ status: string; count: number }>;
+      const scoreDistribution = (scoreRes.data || []) as Array<{ bucket: string; count: number }>;
+      const archetypePerformance = (archetypeRes.data || []) as Array<{
+        archetype: string;
+        total: number;
+        applied: number;
+        interviews: number;
+        offers: number;
+      }>;
 
-    if (totalApps >= 5) {
-      try {
-        const { data } = await callClaude<PatternAnalysisResult>(
-          buildPatternAnalysisSystemPrompt(),
-          buildPatternAnalysisUserPrompt({
-            funnel,
-            scoreDistribution,
-            archetypePerformance: archetypePerformance.map((a) => ({
-              archetype: a.archetype,
-              total: a.total,
-              interviews: a.interviews,
-              offers: a.offers,
-              conversion_rate:
-                a.total > 0 ? Math.round((a.offers / a.total) * 100) : 0,
-            })),
-            totalStudents: studentsRes.count || 0,
-            totalApplications: totalApps,
-          }),
-          { feature: "pattern-analysis", userId: user!.id }
-        );
-        aiInsights = data;
-      } catch (err) {
-        logger.error({ requestId, error: String(err) }, "AI analytics insights failed");
-        // AI insights are optional
+      let aiInsights: PatternAnalysisResult | null = null;
+      const totalApps = appsRes.count || 0;
+
+      if (totalApps >= 5) {
+        try {
+          const { data } = await callClaude<PatternAnalysisResult>(
+            buildPatternAnalysisSystemPrompt(),
+            buildPatternAnalysisUserPrompt({
+              funnel,
+              scoreDistribution,
+              archetypePerformance: archetypePerformance.map((a) => ({
+                archetype: a.archetype,
+                total: a.total,
+                interviews: a.interviews,
+                offers: a.offers,
+                conversion_rate:
+                  a.total > 0 ? Math.round((a.offers / a.total) * 100) : 0,
+              })),
+              totalStudents: studentsRes.count || 0,
+              totalApplications: totalApps,
+            }),
+            { feature: "pattern-analysis", userId: user.id, requestId }
+          );
+          aiInsights = data;
+        } catch (err) {
+          logger.error("AI analytics insights failed", { error: String(err) });
+          // AI insights are optional
+        }
       }
-    }
 
-    return NextResponse.json({
-      funnel,
-      score_distribution: scoreDistribution,
-      archetype_performance: archetypePerformance,
-      total_students: studentsRes.count || 0,
-      total_applications: totalApps,
-      ai_insights: aiInsights,
-    });
-  },
-  { method: "GET", allowedRoles: ["admin"] }
+      logger.info("analytics complete", { total_apps: totalApps });
+
+      return Response.json({
+        funnel,
+        score_distribution: scoreDistribution,
+        archetype_performance: archetypePerformance,
+        total_students: studentsRes.count || 0,
+        total_applications: totalApps,
+        ai_insights: aiInsights,
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("analytics fetch failed", { error: error.message, stack: error.stack });
+      throw err;
+    }
+  }
 );

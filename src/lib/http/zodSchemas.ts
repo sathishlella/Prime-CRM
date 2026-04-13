@@ -14,27 +14,20 @@ export const evaluateSchema = z.object({
 });
 
 export const generateCvSchema = z.object({
-  cv_markdown: z.string().min(1, "CV required"),
-  job_description: z.string().min(1, "Job description required"),
   student_id: z.string().uuid("Invalid student ID"),
+  application_id: z.string().uuid("Invalid application ID").optional(),
+  job_description: z.string().min(1, "Job description required"),
+  company_name: z.string().min(1, "Company name required"),
+  job_role: z.string().min(1, "Job role required"),
+  format: z.enum(["letter", "a4"]).default("letter"),
 });
 
 export const interviewPrepSchema = z.object({
-  cv_markdown: z.string().min(1, "CV required"),
+  student_id: z.string().uuid("Invalid student ID"),
+  application_id: z.string().uuid("Invalid application ID").optional(),
+  company_name: z.string().min(1, "Company name required"),
+  job_role: z.string().min(1, "Job role required"),
   job_description: z.string().min(1, "Job description required"),
-  student_id: z.string().uuid("Invalid student ID"),
-});
-
-export const analyticsSchema = z.object({
-  job_leads: z.array(
-    z.object({
-      title: z.string(),
-      company: z.string(),
-      description: z.string(),
-    })
-  ),
-  cv_markdown: z.string().min(1, "CV required"),
-  student_id: z.string().uuid("Invalid student ID"),
 });
 
 // CRUD Routes
@@ -74,7 +67,6 @@ export const emailSchema = z.object({
 export type EvaluateRequest = z.infer<typeof evaluateSchema>;
 export type GenerateCvRequest = z.infer<typeof generateCvSchema>;
 export type InterviewPrepRequest = z.infer<typeof interviewPrepSchema>;
-export type AnalyticsRequest = z.infer<typeof analyticsSchema>;
 export type LeadAssignRequest = z.infer<typeof leadAssignSchema>;
 export type StudentsUpdateCounselorRequest = z.infer<
   typeof studentsUpdateCounselorSchema

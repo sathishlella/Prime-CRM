@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { callClaude } from "@/lib/ai/claude";
 import {
@@ -6,118 +5,78 @@ import {
   buildEvaluationSystemPrompt,
   buildEvaluationUserPrompt,
 } from "@/lib/ai/prompts/evaluate";
-import { withApi } from "@/lib/infra/withApi";
-import { evaluateSchema } from "@/lib/infra/zodSchemas";
-import { logger } from "@/lib/infra/logger";
+import { withApi } from "@/lib/http/withApi";
+import { evaluateSchema } from "@/lib/http/zodSchemas";
 
 export const POST = withApi(
-  async ({ body, user, requestId }) => {
+  { schema: evaluateSchema, requireRole: ["admin", "counselor"], rateLimit: { bucket: "ai:evaluate", limit: 20, windowMs: 60 * 60 * 1000 } },
+  async ({ body, user, requestId, logger }) => {
     const supabase = createServerClient();
-    const { student_id, job_description, company_name, job_role, job_url } = body;
+    const { student_id, job_description } = body;
 
-    const { data: student } = await supabase
-      .from("students")
-      .select("*, profiles!students_profile_id_fkey(full_name, email)")
-      .eq("id", student_id)
-      .single();
+    try {
+      logger.info("evaluating job match", { student_id });
 
-    if (!student) {
-      return NextResponse.json({ error: "Student not found" }, { status: 404 });
-    }
-
-    const { data: candidateProfile } = await supabase
-      .from("candidate_profiles")
-      .select("*")
-      .eq("student_id", student_id)
-      .single();
-
-    const rawProfiles = student.profiles as unknown;
-    const studentProfile = Array.isArray(rawProfiles)
-      ? (rawProfiles[0] as { full_name: string; email: string })
-      : (rawProfiles as { full_name: string; email: string });
-
-    const systemPrompt = buildEvaluationSystemPrompt();
-    const userPrompt = buildEvaluationUserPrompt(
-      {
-        full_name: studentProfile?.full_name ?? "Student",
-        cv_markdown: candidateProfile?.cv_markdown || null,
-        target_roles: candidateProfile?.target_roles || [],
-        skills: candidateProfile?.skills || [],
-        compensation_target: (candidateProfile?.compensation_target as unknown as string | null) || null,
-        visa_status: student.visa_status,
-        university: student.university,
-        major: student.major,
-      },
-      job_description,
-      company_name,
-      job_role
-    );
-
-    const { data: evaluation, usage } = await callClaude<EvaluationResult>(
-      systemPrompt,
-      userPrompt,
-      { feature: "evaluate", maxTokens: 8192, userId: user!.id }
-    );
-
-    let application_id: string | null = null;
-    const extractedCompany = company_name || evaluation.blocks.a_role_summary.domain || "Unknown";
-    const extractedRole = job_role || evaluation.archetype || "Unknown Role";
-
-    const { data: existingApp } = await supabase
-      .from("applications")
-      .select("id")
-      .eq("student_id", student_id)
-      .eq("company_name", extractedCompany)
-      .eq("job_role", extractedRole)
-      .single();
-
-    if (existingApp) {
-      application_id = existingApp.id;
-    } else {
-      const { data: newApp } = await supabase
-        .from("applications")
-        .insert({
-          student_id,
-          company_name: extractedCompany,
-          job_role: extractedRole,
-          job_description,
-          job_link: job_url || null,
-          resume_used: null,
-          notes: null,
-          status: "applied",
-          applied_by: user!.id,
-        })
-        .select("id")
+      const { data: student } = await supabase
+        .from("students")
+        .select("*, profiles!students_profile_id_fkey(full_name, email)")
+        .eq("id", student_id)
         .single();
 
-      application_id = newApp?.id || null;
-    }
+      if (!student) {
+        logger.warn("student not found", { student_id });
+        return new Response(
+          JSON.stringify({
+            error: "STUDENT_NOT_FOUND",
+            message: "Student not found",
+            requestId,
+          }),
+          { status: 404, headers: { "content-type": "application/json" } }
+        );
+      }
 
-    if (application_id) {
-      await supabase.from("evaluation_scores").upsert(
+      const { data: candidateProfile } = await supabase
+        .from("candidate_profiles")
+        .select("*")
+        .eq("student_id", student_id)
+        .single();
+
+      const rawProfiles = student.profiles as unknown;
+      const studentProfile = Array.isArray(rawProfiles)
+        ? (rawProfiles[0] as { full_name: string; email: string })
+        : (rawProfiles as { full_name: string; email: string });
+
+      const systemPrompt = buildEvaluationSystemPrompt();
+      const userPrompt = buildEvaluationUserPrompt(
         {
-          application_id,
-          student_id,
-          overall_score: evaluation.overall_score,
-          grade: evaluation.grade,
-          archetype: evaluation.archetype,
-          recommendation: evaluation.recommendation,
-          blocks: evaluation.blocks as unknown as Record<string, unknown>,
-          keywords: evaluation.keywords,
-          summary: null,
-          created_by: user!.id,
+          full_name: studentProfile?.full_name ?? "Student",
+          cv_markdown: candidateProfile?.cv_markdown || null,
+          target_roles: candidateProfile?.target_roles || [],
+          skills: candidateProfile?.skills || [],
+          compensation_target: (candidateProfile?.compensation_target as unknown as string | null) || null,
+          visa_status: student.visa_status,
+          university: student.university,
+          major: student.major,
         },
-        { onConflict: "application_id" }
+        job_description
       );
-    }
 
-    return NextResponse.json({
-      evaluation,
-      application_id,
-      company_name: extractedCompany,
-      job_role: extractedRole,
-      usage,
-    });
-  },
-  { method: "POST", allowedRoles: ["admin", "counselor"], bodySchema: evaluateSchema, rateLimit: "evaluate" }
+      const { data: evaluation, usage } = await callClaude<EvaluationResult>(
+        systemPrompt,
+        userPrompt,
+        { feature: "evaluate", maxTokens: 8192, userId: user.id, requestId }
+      );
+
+      logger.info("evaluation complete", { student_id, grade: evaluation.grade, tokens_out: usage?.output_tokens });
+
+      return Response.json({
+        evaluation,
+        usage,
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("evaluation failed", { error: error.message, stack: error.stack });
+      throw err;
+    }
+  }
 );

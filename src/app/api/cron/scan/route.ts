@@ -1,20 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { scanPortals } from "@/lib/scanner";
-import { withApi } from "@/lib/infra/withApi";
-import { logger } from "@/lib/infra/logger";
+import { createLogger } from "@/lib/logging/logger";
+import { getRequestId } from "@/lib/logging/requestId";
 
-export const GET = withApi(
-  async ({ req }) => {
+export async function GET(req: NextRequest): Promise<Response> {
+  const requestId = getRequestId(req);
+  const logger = createLogger(requestId, "/api/cron/scan");
+
+  try {
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      logger.warn({ route: "/api/cron/scan" }, "Invalid cron secret");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      logger.warn("invalid cron secret");
+      return Response.json({ error: "UNAUTHORIZED", message: "Invalid cron secret", requestId }, { status: 401 });
     }
+
+    logger.info("scanning job portals");
 
     const supabase = createAdminClient();
     const result = await scanPortals(supabase);
-    return NextResponse.json(result);
-  },
-  { method: "GET", skipAuth: true }
-);
+
+    logger.info("scan complete", { leads_found: result.leads_found || 0 });
+
+    return Response.json(result);
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    logger.error("scan failed", { error: error.message, stack: error.stack });
+    throw err;
+  }
+}

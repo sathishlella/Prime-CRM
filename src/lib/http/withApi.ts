@@ -21,7 +21,7 @@ export interface ApiHandlerOptions<T extends z.ZodType> {
 }
 
 type Handler<T extends z.ZodType> = (
-  ctx: ApiHandlerContext & { body?: z.infer<T> }
+  ctx: ApiHandlerContext & { body: z.infer<T> }
 ) => Promise<Response>;
 
 /**
@@ -158,7 +158,7 @@ export function withApi<T extends z.ZodType = z.ZodType>(
         requestId,
         logger,
         user: { id: profile.id, email: profile.email, role: profile.role as UserRole },
-        body,
+        body: body as z.infer<T>,
       } as Parameters<Handler<T>>[0]);
 
       // 7. Log success
