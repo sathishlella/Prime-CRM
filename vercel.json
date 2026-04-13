@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/scan",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/agent/digest",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/agent/tick",
+      "schedule": "*/1 * * * *"
     }
   ],
   "functions": {
@@ -19,6 +27,9 @@
       "maxDuration": 300
     },
     "src/app/api/cron/scan/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/agent/tick/route.ts": {
       "maxDuration": 300
     }
   }

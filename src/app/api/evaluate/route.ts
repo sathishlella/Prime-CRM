@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { callClaude } from "@/lib/ai/claude";
 import {
@@ -6,41 +6,15 @@ import {
   buildEvaluationSystemPrompt,
   buildEvaluationUserPrompt,
 } from "@/lib/ai/prompts/evaluate";
+import { withApi } from "@/lib/infra/withApi";
+import { evaluateSchema } from "@/lib/infra/zodSchemas";
+import { logger } from "@/lib/infra/logger";
 
-export async function POST(request: NextRequest) {
-  try {
+export const POST = withApi(
+  async ({ body, user, requestId }) => {
     const supabase = createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { student_id, job_description, company_name, job_role, job_url } = body;
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "counselor"].includes(profile.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { student_id, job_description, company_name, job_role, job_url } =
-      body;
-
-    if (!student_id || !job_description) {
-      return NextResponse.json(
-        { error: "student_id and job_description are required" },
-        { status: 400 }
-      );
-    }
-
-    // Fetch student + candidate profile
     const { data: student } = await supabase
       .from("students")
       .select("*, profiles(full_name, email)")
@@ -48,10 +22,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!student) {
-      return NextResponse.json(
-        { error: "Student not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
     const { data: candidateProfile } = await supabase
@@ -60,11 +31,11 @@ export async function POST(request: NextRequest) {
       .eq("student_id", student_id)
       .single();
 
-    // Build prompt
     const rawProfiles = student.profiles as unknown;
     const studentProfile = Array.isArray(rawProfiles)
       ? (rawProfiles[0] as { full_name: string; email: string })
       : (rawProfiles as { full_name: string; email: string });
+
     const systemPrompt = buildEvaluationSystemPrompt();
     const userPrompt = buildEvaluationUserPrompt(
       {
@@ -82,19 +53,16 @@ export async function POST(request: NextRequest) {
       job_role
     );
 
-    // Call Claude
     const { data: evaluation, usage } = await callClaude<EvaluationResult>(
       systemPrompt,
       userPrompt,
-      { feature: "evaluate", maxTokens: 8192, userId: user.id }
+      { feature: "evaluate", maxTokens: 8192, userId: user!.id }
     );
 
-    // Create application if it doesn't exist
     let application_id: string | null = null;
     const extractedCompany = company_name || evaluation.blocks.a_role_summary.domain || "Unknown";
     const extractedRole = job_role || evaluation.archetype || "Unknown Role";
 
-    // Check for existing application
     const { data: existingApp } = await supabase
       .from("applications")
       .select("id")
@@ -117,7 +85,7 @@ export async function POST(request: NextRequest) {
           resume_used: null,
           notes: null,
           status: "applied",
-          applied_by: user.id,
+          applied_by: user!.id,
         })
         .select("id")
         .single();
@@ -125,7 +93,6 @@ export async function POST(request: NextRequest) {
       application_id = newApp?.id || null;
     }
 
-    // Store evaluation score
     if (application_id) {
       await supabase.from("evaluation_scores").upsert(
         {
@@ -138,7 +105,7 @@ export async function POST(request: NextRequest) {
           blocks: evaluation.blocks as unknown as Record<string, unknown>,
           keywords: evaluation.keywords,
           summary: null,
-          created_by: user.id,
+          created_by: user!.id,
         },
         { onConflict: "application_id" }
       );
@@ -151,11 +118,6 @@ export async function POST(request: NextRequest) {
       job_role: extractedRole,
       usage,
     });
-  } catch (error) {
-    console.error("Evaluation error:", error);
-    return NextResponse.json(
-      { error: "Evaluation failed", details: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { method: "POST", allowedRoles: ["admin", "counselor"], bodySchema: evaluateSchema, rateLimit: "evaluate" }
+);

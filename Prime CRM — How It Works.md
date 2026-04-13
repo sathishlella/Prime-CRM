@@ -1,0 +1,44 @@
+# **Prime CRM — How It Works**
+
+
+
+Three roles, one flow:
+
+Admin
+
+* Creates counselor + student accounts at /admin/users
+* Configures portal scanner (which companies to track) at /admin/scanner
+* Views AI analytics (funnel, archetypes, counselor leaderboard) at /admin/analytics
+
+
+
+Counselor (the AI power user)
+
+* Build student profile → /counselor/students/\[id]/profile — paste CV, target roles, skills, comp target. This powers every AI feature.
+* Evaluate a JD → counselor dashboard → paste JD → click AI Evaluate → Claude returns A-F scorecard (role fit, CV match, compensation, interview prep plan) in \~10s
+* Generate tailored CV → click Generate CV on any application → Claude rewrites summary + bullets for that JD → Playwright renders ATS-optimized PDF → stored in Supabase Storage
+* Auto-discover jobs → /counselor/leads — portal scanner runs every 6h (Vercel cron), dumps new jobs here. Counselor assigns leads → becomes an application
+* Interview prep auto-triggers → when counselor flips status to interview, Claude generates company research + likely questions + STAR+R stories
+
+
+
+Student
+
+* /student — sees their applications + AI evaluation score (no compensation/level strategy shown)
+* /student/cvs — all tailored PDFs generated for them
+* When status = interview → interview prep card appears
+
+
+
+The AI Engine
+
+Claude API (claude-sonnet-4) called from 4 Next.js routes: /api/evaluate, /api/generate-cv, /api/interview-prep, /api/analytics. Prompts live in src/lib/ai/prompts/. Each returns structured JSON → stored in Supabase → rendered in dashboards.
+
+
+
+Data flow: Counselor action → Next.js API → Claude → Supabase (with RLS) → Realtime push → dashboard updates.
+
+
+
+Requires: ANTHROPIC\_API\_KEY in .env.local + running the migration supabase/migrations/001\_prime\_crm\_ai\_tables.sql before any AI feature works.
+

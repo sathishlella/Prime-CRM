@@ -11,16 +11,24 @@ const ROLE_HOME: Record<string, string> = {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Inject request ID for tracing
+  const requestId =
+    request.headers.get("x-request-id") ??
+    `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
   // Allow public static assets and Next.js internals
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set("x-request-id", requestId);
+    return res;
   }
 
   let response = NextResponse.next({ request: { headers: request.headers } });
+  response.headers.set("x-request-id", requestId);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

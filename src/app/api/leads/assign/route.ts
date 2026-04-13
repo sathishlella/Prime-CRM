@@ -1,38 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { withApi } from "@/lib/infra/withApi";
+import { assignLeadSchema } from "@/lib/infra/zodSchemas";
 
-export async function POST(request: NextRequest) {
-  try {
+export const POST = withApi(
+  async ({ body, user }) => {
     const supabase = createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "counselor"].includes(profile.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
     const { lead_id, student_id } = body;
 
-    if (!lead_id || !student_id) {
-      return NextResponse.json(
-        { error: "lead_id and student_id are required" },
-        { status: 400 }
-      );
-    }
-
-    // Fetch lead
     const { data: lead, error: leadError } = await supabase
       .from("job_leads")
       .select("*")
@@ -43,7 +18,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    // Create application from lead
     const { data: application, error: appError } = await supabase
       .from("applications")
       .insert({
@@ -53,7 +27,7 @@ export async function POST(request: NextRequest) {
         job_description: lead.job_description,
         job_link: lead.job_url,
         status: "applied",
-        applied_by: user.id,
+        applied_by: user!.id,
       })
       .select("id")
       .single();
@@ -62,7 +36,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: appError.message }, { status: 500 });
     }
 
-    // Mark lead as assigned
     await supabase
       .from("job_leads")
       .update({
@@ -73,10 +46,6 @@ export async function POST(request: NextRequest) {
       .eq("id", lead_id);
 
     return NextResponse.json({ application_id: application?.id });
-  } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { method: "POST", allowedRoles: ["admin", "counselor"], bodySchema: assignLeadSchema }
+);

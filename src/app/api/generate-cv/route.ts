@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { callClaude } from "@/lib/ai/claude";
 import {
@@ -6,32 +6,16 @@ import {
   buildCVTailorSystemPrompt,
   buildCVTailorUserPrompt,
 } from "@/lib/ai/prompts/cv-tailor";
-import { buildHTML, normalizeTextForATS } from "@/lib/ai/cv-generator";
+import { buildHTML, generatePDFFromHTML, normalizeTextForATS } from "@/lib/ai/cv-generator";
+import { withApi } from "@/lib/infra/withApi";
+import { generateCvSchema } from "@/lib/infra/zodSchemas";
+import { logger } from "@/lib/infra/logger";
 
 export const maxDuration = 60;
 
-export async function POST(request: NextRequest) {
-  try {
+export const POST = withApi(
+  async ({ body, user, requestId }) => {
     const supabase = createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "counselor"].includes(profile.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
     const {
       student_id,
       application_id,
@@ -41,14 +25,6 @@ export async function POST(request: NextRequest) {
       format = "letter",
     } = body;
 
-    if (!student_id || !job_description || !company_name || !job_role) {
-      return NextResponse.json(
-        { error: "student_id, job_description, company_name, and job_role are required" },
-        { status: 400 }
-      );
-    }
-
-    // Fetch student + profile
     const { data: student } = await supabase
       .from("students")
       .select("*, profiles(full_name, email)")
@@ -77,7 +53,6 @@ export async function POST(request: NextRequest) {
       ? (rawProfiles[0] as { full_name: string; email: string })
       : (rawProfiles as { full_name: string; email: string });
 
-    // Call Claude to tailor CV
     const { data: tailoringData } = await callClaude<CVTailorResult>(
       buildCVTailorSystemPrompt(),
       buildCVTailorUserPrompt(
@@ -85,10 +60,9 @@ export async function POST(request: NextRequest) {
         job_description,
         studentProfile.full_name
       ),
-      { feature: "cv-generate", maxTokens: 8192, userId: user.id }
+      { feature: "cv-generate", maxTokens: 8192, userId: user!.id }
     );
 
-    // Build HTML
     let html = buildHTML({
       tailoringData,
       candidateName: studentProfile.full_name,
@@ -100,35 +74,14 @@ export async function POST(request: NextRequest) {
       language: "en",
     });
 
-    // Normalize for ATS
     const { html: normalizedHtml } = normalizeTextForATS(html);
     html = normalizedHtml;
 
-    // Generate PDF using Playwright
     let pdfBuffer: Buffer;
     try {
-      const chromium = await import("@sparticuz/chromium");
-      const { chromium: playwrightChromium } = await import("playwright-core");
-
-      const browser = await playwrightChromium.launch({
-        args: chromium.default.args,
-        executablePath: await chromium.default.executablePath(),
-        headless: true,
-      });
-
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle" });
-      await page.evaluate(() => document.fonts.ready);
-
-      pdfBuffer = await page.pdf({
-        format: format as "letter" | "a4",
-        printBackground: true,
-        margin: { top: "0.6in", right: "0.6in", bottom: "0.6in", left: "0.6in" },
-      });
-
-      await browser.close();
-    } catch {
-      // Fallback: return HTML without PDF if Playwright unavailable
+      pdfBuffer = await generatePDFFromHTML(html, format as "letter" | "a4");
+    } catch (err) {
+      logger.error({ requestId, error: String(err) }, "PDF generation failed, returning HTML fallback");
       return NextResponse.json({
         html,
         tailoring_data: tailoringData,
@@ -137,7 +90,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Upload to Supabase Storage
     const slug = company_name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const date = new Date().toISOString().split("T")[0];
     const fileName = `cv-${slug}-${date}.pdf`;
@@ -153,25 +105,18 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
-      return NextResponse.json(
-        { error: "Failed to upload PDF" },
-        { status: 500 }
-      );
+      logger.error({ requestId, error: uploadError.message }, "CV upload failed");
+      return NextResponse.json({ error: "Failed to upload PDF" }, { status: 500 });
     }
 
-    // Get signed URL
     const { data: urlData } = await adminClient.storage
       .from("generated-cvs")
       .createSignedUrl(storagePath, 3600);
 
     const pdfUrl = urlData?.signedUrl || "";
-
-    // Count pages
     const pdfString = pdfBuffer.toString("latin1");
     const pageCount = (pdfString.match(/\/Type\s*\/Page[^s]/g) || []).length;
 
-    // Store record
     const { data: cvRecord } = await supabase
       .from("generated_cvs")
       .insert({
@@ -185,7 +130,7 @@ export async function POST(request: NextRequest) {
         keyword_coverage: tailoringData.keyword_coverage,
         page_count: pageCount,
         format: format as string,
-        created_by: user.id,
+        created_by: user!.id,
       })
       .select("id")
       .single();
@@ -197,11 +142,6 @@ export async function POST(request: NextRequest) {
       keyword_coverage: tailoringData.keyword_coverage,
       keywords_used: tailoringData.keywords_used,
     });
-  } catch (error) {
-    console.error("CV generation error:", error);
-    return NextResponse.json(
-      { error: "CV generation failed", details: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { method: "POST", allowedRoles: ["admin", "counselor"], bodySchema: generateCvSchema, rateLimit: "cv-generate" }
+);

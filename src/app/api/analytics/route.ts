@@ -6,29 +6,13 @@ import {
   buildPatternAnalysisSystemPrompt,
   buildPatternAnalysisUserPrompt,
 } from "@/lib/ai/prompts/pattern-analysis";
+import { withApi } from "@/lib/infra/withApi";
+import { logger } from "@/lib/infra/logger";
 
-export async function GET() {
-  try {
+export const GET = withApi(
+  async ({ user, requestId }) => {
     const supabase = createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Fetch aggregated data
     const [funnelRes, scoreRes, archetypeRes, studentsRes, appsRes] =
       await Promise.all([
         supabase.rpc("application_funnel"),
@@ -48,7 +32,6 @@ export async function GET() {
       offers: number;
     }>;
 
-    // Get AI insights if we have enough data
     let aiInsights: PatternAnalysisResult | null = null;
     const totalApps = appsRes.count || 0;
 
@@ -70,10 +53,11 @@ export async function GET() {
             totalStudents: studentsRes.count || 0,
             totalApplications: totalApps,
           }),
-          { feature: "pattern-analysis", userId: user.id }
+          { feature: "pattern-analysis", userId: user!.id }
         );
         aiInsights = data;
-      } catch {
+      } catch (err) {
+        logger.error({ requestId, error: String(err) }, "AI analytics insights failed");
         // AI insights are optional
       }
     }
@@ -86,10 +70,6 @@ export async function GET() {
       total_applications: totalApps,
       ai_insights: aiInsights,
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { method: "GET", allowedRoles: ["admin"] }
+);

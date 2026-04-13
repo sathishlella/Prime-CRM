@@ -90,6 +90,33 @@ export function normalizeTextForATS(html: string): {
   }
 }
 
+export async function generatePDFFromHTML(
+  html: string,
+  format: "letter" | "a4"
+): Promise<Buffer> {
+  const chromium = await import("@sparticuz/chromium");
+  const { chromium: playwrightChromium } = await import("playwright-core");
+
+  const browser = await playwrightChromium.launch({
+    args: chromium.default.args,
+    executablePath: await chromium.default.executablePath(),
+    headless: true,
+  });
+
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: "networkidle" });
+  await page.evaluate(() => document.fonts.ready);
+
+  const pdfBuffer = await page.pdf({
+    format,
+    printBackground: true,
+    margin: { top: "0.6in", right: "0.6in", bottom: "0.6in", left: "0.6in" },
+  });
+
+  await browser.close();
+  return pdfBuffer;
+}
+
 export function buildHTML(input: CVGenerationInput): string {
   const {
     tailoringData,

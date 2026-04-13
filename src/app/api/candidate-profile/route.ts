@@ -1,18 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { withApi } from "@/lib/infra/withApi";
+import { candidateProfileSchema } from "@/lib/infra/zodSchemas";
 
-export async function GET(request: NextRequest) {
-  try {
+export const GET = withApi(
+  async ({ req }) => {
     const supabase = createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const studentId = request.nextUrl.searchParams.get("student_id");
+    const studentId = req.nextUrl.searchParams.get("student_id");
     if (!studentId) {
       return NextResponse.json({ error: "student_id required" }, { status: 400 });
     }
@@ -28,48 +22,30 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ profile: data || null });
-  } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { method: "GET", allowedRoles: ["admin", "counselor", "student"] }
+);
 
-export async function PUT(request: NextRequest) {
-  try {
+export const PUT = withApi(
+  async ({ body }) => {
     const supabase = createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "counselor"].includes(profile.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
     const { student_id, ...profileData } = body;
 
-    if (!student_id) {
-      return NextResponse.json({ error: "student_id required" }, { status: 400 });
-    }
+    const upsertData = {
+      student_id,
+      cv_markdown: profileData.cv_markdown ?? null,
+      target_roles: profileData.target_roles ?? null,
+      skills: profileData.skills ?? null,
+      deal_breakers: profileData.deal_breakers ?? null,
+      narrative: profileData.narrative ?? null,
+      location_preference: profileData.location_preference ?? null,
+      proof_points: null,
+      compensation_target: null,
+    };
 
     const { data, error } = await supabase
       .from("candidate_profiles")
-      .upsert(
-        { student_id, ...profileData },
-        { onConflict: "student_id" }
-      )
+      .upsert(upsertData as any, { onConflict: "student_id" })
       .select()
       .single();
 
@@ -78,10 +54,6 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ profile: data });
-  } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { method: "PUT", allowedRoles: ["admin", "counselor"], bodySchema: candidateProfileSchema }
+);

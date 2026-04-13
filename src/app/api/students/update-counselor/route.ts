@@ -1,85 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createServerClient, createAdminClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { sendCounselorAssignedEmail } from "@/lib/email";
+import { withApi } from "@/lib/infra/withApi";
+import { updateCounselorSchema } from "@/lib/infra/zodSchemas";
+import { logger } from "@/lib/infra/logger";
 
-export async function POST(request: NextRequest) {
-  try {
-    // Check if user is authenticated and is admin
-    const supabase = createServerClient();
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Verify admin role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Parse request body
-    const { studentId, counselorId } = await request.json();
-
-    if (!studentId) {
-      return NextResponse.json({ error: "Student ID is required" }, { status: 400 });
-    }
-
-    // Use admin client to bypass RLS
+export const POST = withApi(
+  async ({ body, requestId }) => {
+    const { student_id: studentId, counselor_id: counselorId } = body;
     const adminClient = createAdminClient();
 
     const { error } = await adminClient
       .from("students")
-      .update({ assigned_counselor_id: counselorId })
+      .update({ assigned_counselor_id: counselorId || null })
       .eq("id", studentId);
 
     if (error) {
-      console.error("Error updating counselor:", error);
+      logger.error({ requestId, error: error.message }, "Error updating counselor");
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Trigger email notification to student
+    // Fire-and-forget email notification
     try {
-      // Get student and counselor details for email
       const { data: student } = await adminClient
         .from("students")
-        .select(`
-          profile_id(full_name, email)
-        `)
+        .select("profile_id(full_name, email)")
         .eq("id", studentId)
         .single();
 
-      const { data: counselor } = await adminClient
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", counselorId)
-        .single();
+      const { data: counselor } = counselorId
+        ? await adminClient
+            .from("profiles")
+            .select("full_name, email")
+            .eq("id", counselorId)
+            .single()
+        : { data: null };
 
       if (student && counselor) {
         const studentProfile = (student as any)?.profile_id as { full_name: string; email: string } | null;
-        
         if (studentProfile?.email) {
           await sendCounselorAssignedEmail(studentProfile.email, {
-            studentName:    studentProfile.full_name ?? "Student",
-            counselorName:  counselor.full_name ?? "Your Counselor",
+            studentName: studentProfile.full_name ?? "Student",
+            counselorName: counselor.full_name ?? "Your Counselor",
             counselorEmail: counselor.email ?? "counselor@f1dreamjobs.com",
           });
-          console.log("Counselor assignment email sent to:", studentProfile.email);
         }
       }
     } catch (emailError) {
-      // Log error but don't fail the request — email is non-critical
-      console.error("Failed to send counselor assignment email:", emailError);
+      logger.error({ requestId, error: String(emailError) }, "Failed to send counselor assignment email");
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Unexpected error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
-}
+  },
+  { method: "POST", allowedRoles: ["admin"], bodySchema: updateCounselorSchema }
+);

@@ -270,6 +270,130 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["scanner_config"]["Insert"]>;
       };
+      job_matches: {
+        Row: {
+          id: string;
+          student_id: string;
+          job_lead_id: string;
+          overall_score: number;
+          grade: string;
+          archetype: string | null;
+          match_reasoning: Record<string, unknown> | null;
+          match_status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["job_matches"]["Row"], "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["job_matches"]["Insert"]>;
+      };
+      agent_runs: {
+        Row: {
+          id: string;
+          run_type: string;
+          student_id: string | null;
+          initiated_by: string;
+          status: string;
+          total_steps: number;
+          completed_steps: number;
+          failed_steps: number;
+          input: Record<string, unknown> | null;
+          output: Record<string, unknown> | null;
+          error: string | null;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["agent_runs"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["agent_runs"]["Insert"]>;
+      };
+      agent_run_steps: {
+        Row: {
+          id: string;
+          run_id: string;
+          step_index: number;
+          step_type: string;
+          status: string;
+          input: Record<string, unknown> | null;
+          output: Record<string, unknown> | null;
+          error: string | null;
+          attempts: number;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["agent_run_steps"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["agent_run_steps"]["Insert"]>;
+      };
+      ai_call_log: {
+        Row: {
+          id: string;
+          request_id: string | null;
+          user_id: string | null;
+          feature: string;
+          provider: string;
+          model: string;
+          input_tokens: number | null;
+          output_tokens: number | null;
+          latency_ms: number | null;
+          status: string;
+          error: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["ai_call_log"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["ai_call_log"]["Insert"]>;
+      };
+      chat_threads: {
+        Row: {
+          id: string;
+          student_id: string | null;
+          title: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["chat_threads"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["chat_threads"]["Insert"]>;
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          thread_id: string;
+          role: string;
+          content: string | null;
+          tool_calls: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["chat_messages"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["chat_messages"]["Insert"]>;
+      };
+      rate_limit_buckets: {
+        Row: {
+          key: string;
+          tokens: number;
+          last_refill: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["rate_limit_buckets"]["Row"], "last_refill"> & {
+          last_refill?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["rate_limit_buckets"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -277,6 +401,10 @@ export interface Database {
       score_distribution: { Args: Record<string, never>; Returns: { bucket: string; count: number }[] };
       archetype_performance: { Args: Record<string, never>; Returns: { archetype: string; total: number; applied: number; interviews: number; offers: number }[] };
       counselor_stats: { Args: Record<string, never>; Returns: { counselor_id: string; counselor_name: string; total_students: number; total_applications: number; avg_score: number }[] };
+      check_rate_limit: {
+        Args: { p_user_id: string; p_feature: string; p_limit: number; p_window_seconds: number };
+        Returns: { allowed: boolean; limit: number; remaining: number; reset_at: string }[];
+      };
     };
     Enums: {
       role: Role;

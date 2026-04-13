@@ -1,30 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { withApi } from "@/lib/infra/withApi";
 
-export async function GET(request: NextRequest) {
-  try {
+export const GET = withApi(
+  async ({ req, user }) => {
     const supabase = createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "counselor"].includes(profile.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const page = parseInt(request.nextUrl.searchParams.get("page") || "1");
-    const limit = parseInt(request.nextUrl.searchParams.get("limit") || "20");
-    const status = request.nextUrl.searchParams.get("status"); // unassigned, assigned, expired
+    const page = parseInt(req.nextUrl.searchParams.get("page") || "1");
+    const limit = parseInt(req.nextUrl.searchParams.get("limit") || "20");
+    const status = req.nextUrl.searchParams.get("status");
 
     let query = supabase
       .from("job_leads")
@@ -49,10 +32,6 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ leads: leads || [], total: count || 0 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { method: "GET", allowedRoles: ["admin", "counselor"] }
+);

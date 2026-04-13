@@ -24,6 +24,7 @@
  * extended to write to the DB. Stdout logging continues either way.
  */
 
+import { createAdminClient } from "@/lib/supabase/server";
 import { anthropicJson, anthropicText } from "./providers/anthropic";
 import { groqJson, groqText } from "./providers/groq";
 import {
@@ -100,6 +101,35 @@ function persistAiCall(entry: AiCallLogEntry): void {
   // Single JSON line — Vercel log drains will pick this up.
   // eslint-disable-next-line no-console
   console.log(JSON.stringify({ kind: "ai_call", ...entry }));
+
+  // Fire-and-forget DB persistence (admin client because ai_call_log is admin-only RLS)
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+    try {
+      const admin = createAdminClient();
+      admin
+        .from("ai_call_log")
+        .insert({
+          request_id: entry.request_id,
+          user_id: entry.user_id,
+          feature: entry.feature,
+          provider: entry.provider,
+          model: entry.model,
+          input_tokens: entry.input_tokens,
+          output_tokens: entry.output_tokens,
+          latency_ms: entry.latency_ms,
+          status: entry.status,
+          error: entry.error,
+        } as any)
+        .then(({ error }) => {
+          if (error) {
+            // eslint-disable-next-line no-console
+            console.log(JSON.stringify({ kind: "ai_call_db_error", error: error.message }));
+          }
+        });
+    } catch {
+      // ignore
+    }
+  }
 }
 
 // ─── Provider dispatch ──────────────────────────────────────────────────────
