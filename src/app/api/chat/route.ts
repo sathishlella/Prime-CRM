@@ -1,9 +1,7 @@
-import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { withApi } from "@/lib/infra/withApi";
-import { chatSchema } from "@/lib/infra/zodSchemas";
+import { withApi } from "@/lib/http/withApi";
+import { chatSchema } from "@/lib/http/zodSchemas";
 import { callClaudeText } from "@/lib/ai/claude";
-import { logger } from "@/lib/infra/logger";
 
 const SYSTEM_PROMPT = `You are a helpful, read-only assistant for international students using the F1 Dream Jobs CRM.
 You can ONLY answer questions by using the provided tools. You NEVER invent facts.
@@ -16,63 +14,74 @@ interface ToolCall {
 }
 
 export const POST = withApi(
-  async ({ body, user, requestId }) => {
-    const supabase = createServerClient();
-    const { thread_id, message } = body;
+  {
+    schema: chatSchema,
+    requireRole: ["student"],
+    rateLimit: { bucket: "ai:chat", limit: 30, windowMs: 60 * 1000 },
+  },
+  async ({ body, user, requestId, logger }) => {
+    try {
+      const { thread_id, message } = body;
+      logger.info("chat message received", {});
 
-    // Resolve student_id from auth user
-    const { data: student } = await supabase
-      .from("students")
-      .select("id")
-      .eq("profile_id", user!.id)
-      .single();
+      const supabase = createServerClient();
 
-    if (!student) {
-      return NextResponse.json({ error: "Student record not found" }, { status: 404 });
-    }
-
-    const studentId = student.id;
-
-    // Get or create thread
-    let tid = thread_id;
-    if (!tid) {
-      const { data: t } = await supabase
-        .from("chat_threads")
-        .insert({ student_id: studentId, title: "Assistant" })
+      // Resolve student_id from auth user
+      const { data: student } = await supabase
+        .from("students")
         .select("id")
+        .eq("profile_id", user.id)
         .single();
-      tid = t!.id;
-    }
 
-    // Append user message
-    await supabase.from("chat_messages").insert({
-      thread_id: tid,
-      role: "user",
-      content: message,
-      tool_calls: null,
-    } as any);
-
-    // Fetch recent history (last 10 messages)
-    const { data: history } = await supabase
-      .from("chat_messages")
-      .select("role, content, tool_calls")
-      .eq("thread_id", tid)
-      .order("created_at", { ascending: true })
-      .limit(20);
-
-    const recent = (history || []).slice(-10);
-
-    // Build conversation for Claude
-    const conversation = recent.map((m) => {
-      if (m.role === "tool") {
-        return { role: "user" as const, content: `Tool result: ${m.content}` };
+      if (!student) {
+        logger.warn("student record not found", { profile_id: user.id });
+        return Response.json(
+          { error: "NOT_FOUND", message: "Student record not found", requestId },
+          { status: 404 }
+        );
       }
-      return { role: m.role as "user" | "assistant", content: m.content || "" };
-    });
 
-    // Tool definitions injected into the user prompt (Claude doesn't support OpenAI-style tool schema in the same way,
-    // but we can describe them explicitly and ask for JSON tool calls)
-    const toolsDescription = `
+      const studentId = student.id;
+
+      // Get or create thread
+      let tid = thread_id;
+      if (!tid) {
+        const { data: t } = await supabase
+          .from("chat_threads")
+          .insert({ student_id: studentId, title: "Assistant" })
+          .select("id")
+          .single();
+        tid = t!.id;
+      }
+
+      // Append user message
+      await supabase.from("chat_messages").insert({
+        thread_id: tid,
+        role: "user",
+        content: message,
+        tool_calls: null,
+      } as any);
+
+      // Fetch recent history (last 10 messages)
+      const { data: history } = await supabase
+        .from("chat_messages")
+        .select("role, content, tool_calls")
+        .eq("thread_id", tid)
+        .order("created_at", { ascending: true })
+        .limit(20);
+
+      const recent = (history || []).slice(-10);
+
+      // Build conversation for Claude
+      const conversation = recent.map((m) => {
+        if (m.role === "tool") {
+          return { role: "user" as const, content: `Tool result: ${m.content}` };
+        }
+        return { role: m.role as "user" | "assistant", content: m.content || "" };
+      });
+
+      // Tool definitions injected into the user prompt
+      const toolsDescription = `
 Available tools (respond with a JSON object inside a markdown code block):
 - get_applications(student_id: string)
 - get_job_matches(student_id: string, limit?: number)
@@ -86,103 +95,108 @@ If you need to use one or more tools, respond ONLY with a JSON array of tool cal
 \`\`\`
 If no tool is needed, respond normally.`;
 
-    const userPrompt = `${toolsDescription}\n\nUser message: ${message}`;
+      const userPrompt = `${toolsDescription}\n\nUser message: ${message}`;
 
-    let assistantContent = "";
-    let toolCalls: ToolCall[] = [];
-
-    try {
-      const { text: raw } = await callClaudeText(
-        SYSTEM_PROMPT,
-        conversation.length > 0
-          ? `Conversation so far:\n${conversation.map((c) => `${c.role}: ${c.content}`).join("\n")}\n\n${userPrompt}`
-          : userPrompt,
-        { feature: "chat", maxTokens: 4096, userId: user!.id }
-      );
-      assistantContent = raw;
-
-      // Try to parse tool calls
-      const match = assistantContent.match(/```json\s*([\s\S]*?)\s*```/);
-      if (match) {
-        const parsed = JSON.parse(match[1]);
-        if (Array.isArray(parsed)) {
-          toolCalls = parsed as ToolCall[];
-        }
-      }
-    } catch (err) {
-      logger.error({ requestId, error: String(err) }, "Chat AI call failed");
-      assistantContent = "Sorry, I had trouble processing that. Please try again.";
-    }
-
-    // Execute tool calls
-    const toolResults: { id: string; content: string }[] = [];
-    for (const tc of toolCalls) {
-      const result = await executeTool(supabase, tc, studentId);
-      toolResults.push({ id: tc.id, content: JSON.stringify(result) });
-    }
-
-    // Store assistant message
-    await supabase.from("chat_messages").insert({
-      thread_id: tid,
-      role: "assistant",
-      content: assistantContent,
-      tool_calls: toolCalls.length > 0 ? (toolCalls as any) : null,
-    } as any);
-
-    // Store tool result messages
-    for (const tr of toolResults) {
-      await supabase.from("chat_messages").insert({
-        thread_id: tid,
-        role: "tool",
-        content: tr.content,
-        tool_calls: null,
-      } as any);
-    }
-
-    // If there were tool calls, make a follow-up call to Claude with the results
-    if (toolResults.length > 0) {
-      const followUpHistory = await supabase
-        .from("chat_messages")
-        .select("role, content")
-        .eq("thread_id", tid)
-        .order("created_at", { ascending: true })
-        .limit(30);
-
-      const followUpConversation = (followUpHistory.data || []).map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content || "",
-      }));
+      let assistantContent = "";
+      let toolCalls: ToolCall[] = [];
 
       try {
-        const { text: followUpRaw } = await callClaudeText(
+        const { text: raw } = await callClaudeText(
           SYSTEM_PROMPT,
-          `Use the tool results to answer the user's question. Do not call additional tools.\n\n${followUpConversation
-            .map((c) => `${c.role}: ${c.content}`)
-            .join("\n")}`,
-          { feature: "chat", maxTokens: 4096, userId: user!.id }
+          conversation.length > 0
+            ? `Conversation so far:\n${conversation.map((c) => `${c.role}: ${c.content}`).join("\n")}\n\n${userPrompt}`
+            : userPrompt,
+          { feature: "chat", maxTokens: 4096, userId: user.id }
         );
+        assistantContent = raw;
 
+        // Try to parse tool calls
+        const match = assistantContent.match(/```json\s*([\s\S]*?)\s*```/);
+        if (match) {
+          const parsed = JSON.parse(match[1]);
+          if (Array.isArray(parsed)) {
+            toolCalls = parsed as ToolCall[];
+          }
+        }
+      } catch (err) {
+        logger.error("chat AI call failed", { error: String(err) });
+        assistantContent = "Sorry, I had trouble processing that. Please try again.";
+      }
+
+      // Execute tool calls (read-only allowlist — no writes)
+      const toolResults: { id: string; content: string }[] = [];
+      for (const tc of toolCalls) {
+        const result = await executeTool(supabase, tc, studentId);
+        toolResults.push({ id: tc.id, content: JSON.stringify(result) });
+      }
+
+      // Store assistant message
+      await supabase.from("chat_messages").insert({
+        thread_id: tid,
+        role: "assistant",
+        content: assistantContent,
+        tool_calls: toolCalls.length > 0 ? (toolCalls as any) : null,
+      } as any);
+
+      // Store tool result messages
+      for (const tr of toolResults) {
         await supabase.from("chat_messages").insert({
           thread_id: tid,
-          role: "assistant",
-          content: followUpRaw,
+          role: "tool",
+          content: tr.content,
           tool_calls: null,
         } as any);
-      } catch (err) {
-        logger.error({ requestId, error: String(err) }, "Chat follow-up failed");
       }
+
+      // If there were tool calls, make a follow-up call with the results
+      if (toolResults.length > 0) {
+        const followUpHistory = await supabase
+          .from("chat_messages")
+          .select("role, content")
+          .eq("thread_id", tid)
+          .order("created_at", { ascending: true })
+          .limit(30);
+
+        const followUpConversation = (followUpHistory.data || []).map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content || "",
+        }));
+
+        try {
+          const { text: followUpRaw } = await callClaudeText(
+            SYSTEM_PROMPT,
+            `Use the tool results to answer the user's question. Do not call additional tools.\n\n${followUpConversation
+              .map((c) => `${c.role}: ${c.content}`)
+              .join("\n")}`,
+            { feature: "chat", maxTokens: 4096, userId: user.id }
+          );
+
+          await supabase.from("chat_messages").insert({
+            thread_id: tid,
+            role: "assistant",
+            content: followUpRaw,
+            tool_calls: null,
+          } as any);
+        } catch (err) {
+          logger.error("chat follow-up failed", { error: String(err) });
+        }
+      }
+
+      // Return latest messages
+      const { data: messages } = await supabase
+        .from("chat_messages")
+        .select("id, role, content, tool_calls, created_at")
+        .eq("thread_id", tid)
+        .order("created_at", { ascending: true });
+
+      logger.info("chat response sent", {});
+      return Response.json({ thread_id: tid, messages: messages || [] });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("chat route failed", { error: error.message, stack: error.stack });
+      throw err;
     }
-
-    // Return latest messages
-    const { data: messages } = await supabase
-      .from("chat_messages")
-      .select("id, role, content, tool_calls, created_at")
-      .eq("thread_id", tid)
-      .order("created_at", { ascending: true });
-
-    return NextResponse.json({ thread_id: tid, messages: messages || [] });
-  },
-  { method: "POST", allowedRoles: ["student"], bodySchema: chatSchema, rateLimit: "chat" }
+  }
 );
 
 async function executeTool(

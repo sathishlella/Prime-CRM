@@ -1,14 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { withApi } from "@/lib/infra/withApi";
-import { logger } from "@/lib/infra/logger";
+import { createLogger } from "@/lib/logging/logger";
+import { getRequestId } from "@/lib/logging/requestId";
 
-export const GET = withApi(
-  async ({ req, requestId }) => {
+export async function GET(req: NextRequest): Promise<Response> {
+  const requestId = getRequestId(req);
+  const logger = createLogger(requestId, "/api/agent/digest");
+
+  try {
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      logger.warn({ route: "/api/agent/digest", requestId }, "Invalid cron secret");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      logger.warn("invalid cron secret");
+      return Response.json(
+        { error: "UNAUTHORIZED", message: "Invalid cron secret", requestId },
+        { status: 401 }
+      );
     }
 
     const supabase = createAdminClient();
@@ -20,7 +26,7 @@ export const GET = withApi(
       .eq("status", "active");
 
     if (!students || students.length === 0) {
-      return NextResponse.json({ sent: 0 });
+      return Response.json({ sent: 0 });
     }
 
     let sent = 0;
@@ -42,7 +48,6 @@ export const GET = withApi(
       const title = `${matches.length} new job match${matches.length > 1 ? "es" : ""} for you`;
       const message = `Top picks: ${companies}. Review them with your counselor.`;
 
-      // In-app notification
       const { error: notifError } = await supabase.from("notifications").insert({
         user_id: student.profile_id,
         title,
@@ -52,7 +57,7 @@ export const GET = withApi(
       } as any);
 
       if (notifError) {
-        logger.error({ requestId, studentId: student.id, error: notifError.message }, "Digest notification failed");
+        logger.error("digest notification failed", { studentId: student.id, error: notifError.message });
         continue;
       }
 
@@ -60,15 +65,16 @@ export const GET = withApi(
       await supabase
         .from("job_matches")
         .update({ match_status: "reviewed" })
-        .in(
-          "id",
-          matches.map((m) => m.id)
-        );
+        .in("id", matches.map((m) => m.id));
 
       sent++;
     }
 
-    return NextResponse.json({ sent });
-  },
-  { method: "GET", skipAuth: true }
-);
+    logger.info("digest complete", { sent });
+    return Response.json({ sent });
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    logger.error("digest failed", { error: error.message, stack: error.stack });
+    throw err;
+  }
+}

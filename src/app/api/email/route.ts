@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   sendWelcomeEmail,
@@ -6,37 +5,12 @@ import {
   sendStatusChangeEmail,
   sendCounselorAssignedEmail,
 } from "@/lib/email";
-import { withApi } from "@/lib/infra/withApi";
-import { logger } from "@/lib/infra/logger";
-import { z } from "zod";
-
-const emailSchema = z.union([
-  z.object({
-    type: z.literal("welcome"),
-    to: z.string().email(),
-    name: z.string(),
-    role: z.string(),
-    email: z.string().email(),
-  }),
-  z.object({
-    type: z.literal("new_application"),
-    appId: z.string().uuid(),
-  }),
-  z.object({
-    type: z.literal("status_change"),
-    appId: z.string().uuid(),
-    newStatus: z.string(),
-    oldStatus: z.string(),
-  }),
-  z.object({
-    type: z.literal("counselor_assigned"),
-    studentId: z.string().uuid(),
-    counselorId: z.string().uuid(),
-  }),
-]);
+import { withApi } from "@/lib/http/withApi";
+import { emailSchema } from "@/lib/http/zodSchemas";
 
 export const POST = withApi(
-  async ({ body, requestId }) => {
+  { schema: emailSchema, requireRole: ["admin", "counselor"] },
+  async ({ body, requestId, logger }) => {
     const admin = createAdminClient();
     const { type } = body;
 
@@ -59,14 +33,18 @@ export const POST = withApi(
           .single();
 
         if (!app) {
-          return NextResponse.json({ error: "Application not found" }, { status: 404 });
+          logger.warn("application not found for email", { appId });
+          return Response.json(
+            { error: "NOT_FOUND", message: "Application not found", requestId },
+            { status: 404 }
+          );
         }
 
         const studentProfile = (app.student as any)?.profile_id as { full_name: string; email: string } | null;
         const counselorProfile = (app.counselor as any) as { full_name: string } | null;
 
         if (!studentProfile?.email) {
-          return NextResponse.json({ ok: false, message: "No student email found" });
+          return Response.json({ ok: false, message: "No student email found" });
         }
 
         await sendNewApplicationEmail(studentProfile.email, {
@@ -90,12 +68,16 @@ export const POST = withApi(
           .single();
 
         if (!app) {
-          return NextResponse.json({ error: "Application not found" }, { status: 404 });
+          logger.warn("application not found for status_change email", { appId });
+          return Response.json(
+            { error: "NOT_FOUND", message: "Application not found", requestId },
+            { status: 404 }
+          );
         }
 
         const studentProfile = (app.student as any)?.profile_id as { full_name: string; email: string } | null;
         if (!studentProfile?.email) {
-          return NextResponse.json({ ok: false, message: "No student email found" });
+          return Response.json({ ok: false, message: "No student email found" });
         }
 
         await sendStatusChangeEmail(studentProfile.email, {
@@ -122,15 +104,23 @@ export const POST = withApi(
           .single();
 
         if (!student) {
-          return NextResponse.json({ error: "Student not found" }, { status: 404 });
+          logger.warn("student not found for counselor_assigned email", { studentId });
+          return Response.json(
+            { error: "NOT_FOUND", message: "Student not found", requestId },
+            { status: 404 }
+          );
         }
         if (!counselor) {
-          return NextResponse.json({ error: "Counselor not found" }, { status: 404 });
+          logger.warn("counselor not found for counselor_assigned email", { counselorId });
+          return Response.json(
+            { error: "NOT_FOUND", message: "Counselor not found", requestId },
+            { status: 404 }
+          );
         }
 
         const studentProfile = (student as any)?.profile_id as { full_name: string; email: string } | null;
         if (!studentProfile?.email) {
-          return NextResponse.json({ ok: false, message: "No student email found" });
+          return Response.json({ ok: false, message: "No student email found" });
         }
 
         await sendCounselorAssignedEmail(studentProfile.email, {
@@ -140,12 +130,13 @@ export const POST = withApi(
         });
       }
 
-      return NextResponse.json({ ok: true });
+      logger.info("email sent", { type });
+      return Response.json({ ok: true });
     } catch (err) {
-      logger.error({ requestId, error: String(err) }, "Email route error");
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("email send failed", { type, error: error.message });
       // Never let email failure crash the app
-      return NextResponse.json({ ok: false, message: "Email failed silently" });
+      return Response.json({ ok: false, message: "Email failed silently" });
     }
-  },
-  { method: "POST", allowedRoles: ["admin", "counselor"], bodySchema: emailSchema }
+  }
 );

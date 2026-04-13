@@ -30,48 +30,83 @@ export const interviewPrepSchema = z.object({
   job_description: z.string().min(1, "Job description required"),
 });
 
-// CRUD Routes
+// Agent Routes
 
-export const leadAssignSchema = z.object({
+export const matchAgentSchema = z.object({
+  student_id: z.string().uuid("Invalid student ID"),
+});
+
+export const applyAgentSchema = z.object({
+  student_id: z.string().uuid("Invalid student ID"),
+  job_match_ids: z.array(z.string().uuid("Invalid match ID")).min(1).max(50),
+});
+
+export const chatSchema = z.object({
+  thread_id: z.string().uuid("Invalid thread ID").optional(),
+  message: z.string().min(1).max(4000),
+});
+
+// Non-AI Routes
+
+export const candidateProfileSchema = z.object({
+  student_id: z.string().uuid("Invalid student ID"),
+  target_roles: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+  narrative: z.string().max(5000).optional(),
+  deal_breakers: z.array(z.string()).optional(),
+  location_preference: z.string().max(200).optional(),
+  cv_markdown: z.string().max(100000).optional(),
+});
+
+export const assignLeadSchema = z.object({
   lead_id: z.string().uuid("Invalid lead ID"),
   student_id: z.string().uuid("Invalid student ID"),
 });
 
-export const studentsUpdateCounselorSchema = z.object({
+export const updateCounselorSchema = z.object({
   student_id: z.string().uuid("Invalid student ID"),
-  counselor_id: z.string().uuid("Invalid counselor ID"),
+  counselor_id: z.string().uuid("Invalid counselor ID").optional().or(z.literal("")),
 });
 
-export const leadsSchema = z.object({
-  job_link: z.string().url("Invalid job link"),
-  title: z.string().min(1, "Title required"),
-  company: z.string().min(1, "Company required"),
-  description: z.string().optional(),
-});
-
-export const candidateProfileSchema = z.object({
-  student_id: z.string().uuid("Invalid student ID"),
-});
-
-export const usersDeleteSchema = z.object({
+export const deleteUserSchema = z.object({
   user_id: z.string().uuid("Invalid user ID"),
+  role: z.enum(["admin", "counselor", "student"]),
 });
 
-export const emailSchema = z.object({
-  to: z.string().email("Invalid email"),
-  subject: z.string().min(1, "Subject required"),
-  html: z.string().min(1, "HTML body required"),
-});
+export const emailSchema = z.union([
+  z.object({
+    type: z.literal("welcome"),
+    to: z.string().email("Invalid email"),
+    name: z.string().min(1),
+    role: z.string().min(1),
+    email: z.string().email("Invalid email"),
+  }),
+  z.object({
+    type: z.literal("new_application"),
+    appId: z.string().uuid("Invalid application ID"),
+  }),
+  z.object({
+    type: z.literal("status_change"),
+    appId: z.string().uuid("Invalid application ID"),
+    newStatus: z.string().min(1),
+    oldStatus: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("counselor_assigned"),
+    studentId: z.string().uuid("Invalid student ID"),
+    counselorId: z.string().uuid("Invalid counselor ID"),
+  }),
+]);
 
 // Type exports for use in route handlers
 export type EvaluateRequest = z.infer<typeof evaluateSchema>;
 export type GenerateCvRequest = z.infer<typeof generateCvSchema>;
 export type InterviewPrepRequest = z.infer<typeof interviewPrepSchema>;
-export type LeadAssignRequest = z.infer<typeof leadAssignSchema>;
-export type StudentsUpdateCounselorRequest = z.infer<
-  typeof studentsUpdateCounselorSchema
->;
-export type LeadsRequest = z.infer<typeof leadsSchema>;
+export type MatchAgentRequest = z.infer<typeof matchAgentSchema>;
+export type ApplyAgentRequest = z.infer<typeof applyAgentSchema>;
+export type ChatRequest = z.infer<typeof chatSchema>;
 export type CandidateProfileRequest = z.infer<typeof candidateProfileSchema>;
-export type UsersDeleteRequest = z.infer<typeof usersDeleteSchema>;
+export type AssignLeadRequest = z.infer<typeof assignLeadSchema>;
+export type UpdateCounselorRequest = z.infer<typeof updateCounselorSchema>;
+export type DeleteUserRequest = z.infer<typeof deleteUserSchema>;
 export type EmailRequest = z.infer<typeof emailSchema>;
