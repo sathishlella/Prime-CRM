@@ -27,6 +27,14 @@ jobs:
       # Misc
       CRON_SECRET: ${{ secrets.CRON_SECRET || 'placeholder' }}
       NEXT_PUBLIC_DEMO_MODE: 'true'
+      # E2E test credentials (optional — E2E step skipped when absent)
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL || '' }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD || '' }}
+      E2E_COUNSELOR_EMAIL: ${{ secrets.E2E_COUNSELOR_EMAIL || '' }}
+      E2E_COUNSELOR_PASSWORD: ${{ secrets.E2E_COUNSELOR_PASSWORD || '' }}
+      E2E_STUDENT_EMAIL: ${{ secrets.E2E_STUDENT_EMAIL || '' }}
+      E2E_STUDENT_PASSWORD: ${{ secrets.E2E_STUDENT_PASSWORD || '' }}
+      PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL || 'http://localhost:3000' }}
 
     steps:
       - name: Checkout
@@ -52,3 +60,13 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install Playwright browsers
+        if: env.E2E_ADMIN_EMAIL != ''
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        if: env.E2E_ADMIN_EMAIL != ''
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ env.PLAYWRIGHT_BASE_URL }}
