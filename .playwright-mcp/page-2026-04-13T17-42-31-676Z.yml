@@ -1,0 +1,176 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e23]
+  - generic [ref=e27]:
+    - complementary [ref=e28]:
+      - link "F1 Dream Jobs" [ref=e29] [cursor=pointer]:
+        - /url: /admin
+        - img "F1 Dream Jobs" [ref=e31]
+      - generic [ref=e32]: Navigation
+      - navigation [ref=e33]:
+        - link "Dashboard" [ref=e34] [cursor=pointer]:
+          - /url: /admin
+          - generic [ref=e35]:
+            - img [ref=e37]
+            - generic [ref=e42]: Dashboard
+          - img [ref=e44]
+        - link "Users" [ref=e46] [cursor=pointer]:
+          - /url: /admin/users
+          - generic [ref=e47]:
+            - img [ref=e49]
+            - generic [ref=e54]: Users
+        - link "Scanner" [ref=e55] [cursor=pointer]:
+          - /url: /admin/scanner
+          - generic [ref=e56]:
+            - img [ref=e58]
+            - generic [ref=e62]: Scanner
+        - link "Analytics" [ref=e63] [cursor=pointer]:
+          - /url: /admin/analytics
+          - generic [ref=e64]:
+            - img [ref=e66]
+            - generic [ref=e69]: Analytics
+        - link "Agent Runs" [ref=e70] [cursor=pointer]:
+          - /url: /admin/agents
+          - generic [ref=e71]:
+            - img [ref=e73]
+            - generic [ref=e75]: Agent Runs
+        - link "AI Costs" [ref=e76] [cursor=pointer]:
+          - /url: /admin/ai-costs
+          - generic [ref=e77]:
+            - img [ref=e79]
+            - generic [ref=e82]: AI Costs
+      - generic [ref=e85]:
+        - text: Prime CRM
+        - text: by F1 Dream Jobs · v2.0
+    - generic [ref=e86]:
+      - banner [ref=e87]:
+        - generic [ref=e88]:
+          - button "Notifications" [ref=e91] [cursor=pointer]:
+            - img [ref=e92]
+          - button "TA Test Admin Admin" [ref=e96] [cursor=pointer]:
+            - generic [ref=e97]: TA
+            - generic [ref=e98]:
+              - generic [ref=e99]: Test Admin
+              - generic [ref=e100]: Admin
+            - img [ref=e102]
+      - main [ref=e104]:
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - heading "Admin Overview" [level=2] [ref=e108]
+              - paragraph [ref=e109]: Full system visibility across all students and counselors.
+            - button "+ New User" [ref=e110] [cursor=pointer]:
+              - generic [ref=e111]: +
+              - text: New User
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - generic [ref=e115]: "3"
+              - generic [ref=e116]: Total Students
+            - generic [ref=e118]:
+              - generic [ref=e120]: "3"
+              - generic [ref=e121]: Counselors
+            - generic [ref=e123]:
+              - generic [ref=e125]: "2"
+              - generic [ref=e126]: Applications
+            - generic [ref=e128]:
+              - generic [ref=e130]: "0"
+              - generic [ref=e131]: Recent (48h)
+          - generic [ref=e133]:
+            - generic [ref=e134]: Pipeline Overview
+            - generic [ref=e140]:
+              - text: Applied
+              - strong [ref=e141]: "2"
+          - generic [ref=e142]:
+            - button "Students & Team" [ref=e143] [cursor=pointer]
+            - button "User Management" [ref=e144] [cursor=pointer]
+          - generic [ref=e145]:
+            - generic [ref=e146]:
+              - generic [ref=e147]: Team Performance
+              - generic [ref=e148]:
+                - generic [ref=e149]:
+                  - generic [ref=e150]:
+                    - generic [ref=e151]: C
+                    - generic [ref=e152]:
+                      - generic [ref=e153]: con
+                      - generic [ref=e154]: con@con.com
+                  - generic [ref=e155]:
+                    - generic [ref=e156]:
+                      - generic [ref=e157]: "1"
+                      - generic [ref=e158]: Students
+                    - generic [ref=e159]:
+                      - generic [ref=e160]: "0"
+                      - generic [ref=e161]: Applications
+                    - generic [ref=e162]:
+                      - generic [ref=e163]: "0"
+                      - generic [ref=e164]: Interviews
+                - generic [ref=e165]:
+                  - generic [ref=e166]:
+                    - generic [ref=e167]: S
+                    - generic [ref=e168]:
+                      - generic [ref=e169]: Sushmita-Marketing
+                      - generic [ref=e170]: sushmarketing25@gmail.com
+                  - generic [ref=e171]:
+                    - generic [ref=e172]:
+                      - generic [ref=e173]: "1"
+                      - generic [ref=e174]: Students
+                    - generic [ref=e175]:
+                      - generic [ref=e176]: "2"
+                      - generic [ref=e177]: Applications
+                    - generic [ref=e178]:
+                      - generic [ref=e179]: "0"
+                      - generic [ref=e180]: Interviews
+                - generic [ref=e181]:
+                  - generic [ref=e182]:
+                    - generic [ref=e183]: TC
+                    - generic [ref=e184]:
+                      - generic [ref=e185]: Test Counselor
+                      - generic [ref=e186]: testcounselor@f1dreamjobs.com
+                  - generic [ref=e187]:
+                    - generic [ref=e188]:
+                      - generic [ref=e189]: "1"
+                      - generic [ref=e190]: Students
+                    - generic [ref=e191]:
+                      - generic [ref=e192]: "0"
+                      - generic [ref=e193]: Applications
+                    - generic [ref=e194]:
+                      - generic [ref=e195]: "0"
+                      - generic [ref=e196]: Interviews
+            - generic [ref=e197]: All Students
+            - table [ref=e199]:
+              - rowgroup [ref=e200]:
+                - row "Student Counselor Applications" [ref=e201]:
+                  - columnheader "Student" [ref=e202]
+                  - columnheader "Counselor" [ref=e203]
+                  - columnheader "Applications" [ref=e204]
+                  - columnheader [ref=e205]
+              - rowgroup [ref=e206]:
+                - row "S stud lewis university Sushmita-Marketing Applied 2 View ›" [ref=e207] [cursor=pointer]:
+                  - cell "S stud lewis university" [ref=e208]:
+                    - generic [ref=e209]:
+                      - generic [ref=e210]: S
+                      - generic [ref=e211]:
+                        - generic [ref=e212]: stud
+                        - generic [ref=e213]: lewis university
+                  - cell "Sushmita-Marketing" [ref=e214]
+                  - cell "Applied 2" [ref=e215]:
+                    - generic [ref=e217]: Applied 2
+                  - cell "View ›" [ref=e218]
+                - row "S studtest lewis university con View ›" [ref=e219] [cursor=pointer]:
+                  - cell "S studtest lewis university" [ref=e220]:
+                    - generic [ref=e221]:
+                      - generic [ref=e222]: S
+                      - generic [ref=e223]:
+                        - generic [ref=e224]: studtest
+                        - generic [ref=e225]: lewis university
+                  - cell "con" [ref=e226]
+                  - cell [ref=e227]
+                  - cell "View ›" [ref=e228]
+                - row "TS Test Student Test University Test Counselor View ›" [ref=e229] [cursor=pointer]:
+                  - cell "TS Test Student Test University" [ref=e230]:
+                    - generic [ref=e231]:
+                      - generic [ref=e232]: TS
+                      - generic [ref=e233]:
+                        - generic [ref=e234]: Test Student
+                        - generic [ref=e235]: Test University
+                  - cell "Test Counselor" [ref=e236]
+                  - cell [ref=e237]
+                  - cell "View ›" [ref=e238]

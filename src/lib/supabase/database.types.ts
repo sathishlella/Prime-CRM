@@ -344,6 +344,7 @@ export interface Database {
           model: string;
           input_tokens: number | null;
           output_tokens: number | null;
+          cost_usd: number | null;
           latency_ms: number | null;
           status: string;
           error: string | null;

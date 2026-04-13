@@ -12,6 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
     "@hookform/resolvers": "3.9.0",
+    "@sentry/nextjs": "^10.48.0",
     "@sparticuz/chromium": "^131.0.1",
     "@supabase/ssr": "0.3.0",
     "@supabase/supabase-js": "2.44.4",

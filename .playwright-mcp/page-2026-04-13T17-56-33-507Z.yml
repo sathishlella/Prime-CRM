@@ -1,0 +1,21 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e500]:
+    - generic [ref=e501]:
+      - img "F1 Dream Jobs" [ref=e503]
+      - heading "F1 Dream Jobs" [level=1] [ref=e504]
+      - paragraph [ref=e505]: CRM Dashboard
+      - paragraph [ref=e506]: Sign in to your workspace
+    - generic [ref=e508]:
+      - generic [ref=e509]:
+        - generic: Email address
+        - textbox "Email address" [ref=e510]: testcounselor@f1dreamjobs.com
+      - generic [ref=e511]:
+        - generic: Password
+        - textbox "Password" [ref=e512]: test123456
+        - button [ref=e514] [cursor=pointer]:
+          - img [ref=e515]
+      - button "Redirecting…" [disabled] [ref=e520]:
+        - img [ref=e521]
+        - text: Redirecting…
+    - paragraph [ref=e519]: Sessions expire after 30 minutes of inactivity

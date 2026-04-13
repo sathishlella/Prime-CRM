@@ -1,0 +1,113 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]: F1 Dream Jobs CRM
+  - generic [ref=e1144]:
+    - complementary [ref=e1145]:
+      - link "F1 Dream Jobs" [ref=e1146] [cursor=pointer]:
+        - /url: /student
+        - img "F1 Dream Jobs" [ref=e1148]
+      - generic [ref=e1149]: Navigation
+      - navigation [ref=e1150]:
+        - link "Dashboard" [ref=e1151] [cursor=pointer]:
+          - /url: /student
+          - generic [ref=e1152]:
+            - img [ref=e1154]
+            - generic [ref=e1159]: Dashboard
+          - img [ref=e1161]
+        - link "My CVs" [ref=e1163] [cursor=pointer]:
+          - /url: /student/cvs
+          - generic [ref=e1164]:
+            - img [ref=e1166]
+            - generic [ref=e1169]: My CVs
+        - link "My Documents" [ref=e1170] [cursor=pointer]:
+          - /url: /student/documents
+          - generic [ref=e1171]:
+            - img [ref=e1173]
+            - generic [ref=e1175]: My Documents
+      - generic [ref=e1178]:
+        - text: Prime CRM
+        - text: by F1 Dream Jobs · v2.0
+    - generic [ref=e1179]:
+      - banner [ref=e1180]:
+        - generic [ref=e1181]:
+          - generic [ref=e1183] [cursor=pointer]:
+            - button "Notifications" [ref=e1184]:
+              - img [ref=e1185]
+              - generic: "2"
+            - generic [ref=e1267]:
+              - generic [ref=e1268]:
+                - generic [ref=e1269]:
+                  - generic [ref=e1270]: Notifications
+                  - generic [ref=e1271]: 2 new
+                - button "Mark all read" [ref=e1272]
+              - generic [ref=e1273]:
+                - generic [ref=e1277]:
+                  - generic [ref=e1279]: "New Application: TestCorp"
+                  - generic [ref=e1281]: A new application was submitted to TestCorp – Software Engineer
+                  - generic [ref=e1282]:
+                    - generic [ref=e1283]: Application
+                    - generic [ref=e1284]: 50m ago
+                - generic [ref=e1288]:
+                  - generic [ref=e1290]: "New Application: TestCorp"
+                  - generic [ref=e1292]: A new application was submitted to TestCorp – Software Engineer
+                  - generic [ref=e1293]:
+                    - generic [ref=e1294]: Application
+                    - generic [ref=e1295]: 50m ago
+          - button "TS Test Student Student" [ref=e1189] [cursor=pointer]:
+            - generic [ref=e1190]: TS
+            - generic [ref=e1191]:
+              - generic [ref=e1192]: Test Student
+              - generic [ref=e1193]: Student
+            - img [ref=e1195]
+      - main [ref=e1197]:
+        - generic [ref=e1198]:
+          - generic [ref=e1199]:
+            - heading "Hi Test 👋" [level=2] [ref=e1200]
+            - paragraph [ref=e1201]: Here’s everything we’re doing for you — full transparency.
+          - generic [ref=e1202]:
+            - generic [ref=e1203]:
+              - generic [ref=e1205]: "2"
+              - generic [ref=e1206]: Applied
+            - generic [ref=e1208]:
+              - generic [ref=e1210]: "0"
+              - generic [ref=e1211]: In Progress
+            - generic [ref=e1213]:
+              - generic [ref=e1215]: "0"
+              - generic [ref=e1216]: Interview
+            - generic [ref=e1218]:
+              - generic [ref=e1220]: "2"
+              - generic [ref=e1221]: Total
+          - generic [ref=e1223]:
+            - button "All" [ref=e1224] [cursor=pointer]
+            - button "Applied2" [ref=e1225] [cursor=pointer]
+            - button "In Progress0" [ref=e1226] [cursor=pointer]
+            - button "Interview0" [ref=e1227] [cursor=pointer]
+            - button "Rejected0" [ref=e1228] [cursor=pointer]
+            - button "Offered0" [ref=e1229] [cursor=pointer]
+          - generic [ref=e1230]:
+            - generic [ref=e1232] [cursor=pointer]:
+              - generic [ref=e1233]: T
+              - generic [ref=e1234]:
+                - generic [ref=e1235]:
+                  - generic [ref=e1236]:
+                    - generic [ref=e1237]: TestCorp
+                    - generic [ref=e1238]: Software Engineer
+                  - generic [ref=e1239]: Applied
+                - generic [ref=e1241]:
+                  - text: Applied by
+                  - strong [ref=e1242]: Counselor
+                  - text: · Apr 13, 2026, 11:35 PM
+              - generic [ref=e1243]: ▾
+            - generic [ref=e1245] [cursor=pointer]:
+              - generic [ref=e1246]: T
+              - generic [ref=e1247]:
+                - generic [ref=e1248]:
+                  - generic [ref=e1249]:
+                    - generic [ref=e1250]: TestCorp
+                    - generic [ref=e1251]: Software Engineer
+                  - generic [ref=e1252]: Applied
+                - generic [ref=e1254]:
+                  - text: Applied by
+                  - strong [ref=e1255]: Counselor
+                  - text: · Apr 13, 2026, 11:35 PM
+              - generic [ref=e1256]: ▾
+          - button "Open chat" [ref=e1257] [cursor=pointer]: 💬

@@ -1,0 +1,17 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - img "F1 Dream Jobs" [ref=e6]
+    - heading "F1 Dream Jobs" [level=1] [ref=e7]
+    - paragraph [ref=e8]: CRM Dashboard
+    - paragraph [ref=e9]: Sign in to your workspace
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - generic: Email address
+      - textbox "Email address" [ref=e13]
+    - generic [ref=e14]:
+      - generic: Password
+      - textbox "Password" [ref=e15]
+      - button [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+    - button "Sign In" [ref=e21] [cursor=pointer]
+  - paragraph [ref=e22]: Sessions expire after 30 minutes of inactivity

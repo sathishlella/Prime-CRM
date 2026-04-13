@@ -27,7 +27,7 @@ export const POST = withApi(
 
     const { data: student } = await supabase
       .from("students")
-      .select("*, profiles(full_name, email)")
+      .select("*, profiles!students_profile_id_fkey(full_name, email)")
       .eq("id", student_id)
       .single();
 

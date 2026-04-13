@@ -24,6 +24,7 @@
  * extended to write to the DB. Stdout logging continues either way.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/server";
 import { anthropicJson, anthropicText } from "./providers/anthropic";
 import { groqJson, groqText } from "./providers/groq";
@@ -119,6 +120,7 @@ function persistAiCall(entry: AiCallLogEntry): void {
           latency_ms: entry.latency_ms,
           status: entry.status,
           error: entry.error,
+          cost_usd: entry.cost_usd,
         } as any)
         .then(({ error }) => {
           if (error) {
@@ -207,6 +209,7 @@ export async function aiJson<T>(opts: AiCallOptions): Promise<AiJsonResult<T>> {
       latency_ms: latency,
       error: aiErr ? `${aiErr.code ?? aiErr.status ?? ""} ${aiErr.message}`.trim() : String(err),
     });
+    Sentry.captureException(err);
 
     // No fallback configured for this feature, or error is not retryable
     if (!policy.fallback || !aiErr || !aiErr.retryable) {
@@ -259,6 +262,7 @@ export async function aiJson<T>(opts: AiCallOptions): Promise<AiJsonResult<T>> {
           ? `${fallbackAiErr.code ?? fallbackAiErr.status ?? ""} ${fallbackAiErr.message}`.trim()
           : String(fallbackErr),
       });
+      Sentry.captureException(fallbackErr);
       throw fallbackErr;
     }
   }
@@ -316,6 +320,7 @@ export async function aiText(opts: AiCallOptions): Promise<AiTextResult> {
       latency_ms: latency,
       error: aiErr ? `${aiErr.code ?? aiErr.status ?? ""} ${aiErr.message}`.trim() : String(err),
     });
+    Sentry.captureException(err);
 
     if (!policy.fallback || !aiErr || !aiErr.retryable) {
       throw err;
@@ -366,6 +371,7 @@ export async function aiText(opts: AiCallOptions): Promise<AiTextResult> {
           ? `${fallbackAiErr.code ?? fallbackAiErr.status ?? ""} ${fallbackAiErr.message}`.trim()
           : String(fallbackErr),
       });
+      Sentry.captureException(fallbackErr);
       throw fallbackErr;
     }
   }

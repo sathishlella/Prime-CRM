@@ -4,6 +4,42 @@
 -- AI cost observability.
 -- ============================================================
 
+-- ─── Ensure enums and job_leads exist (dependencies from 001) ───────────────
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lead_status') THEN
+    CREATE TYPE public.lead_status AS ENUM ('new', 'reviewed', 'assigned', 'dismissed');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lead_source') THEN
+    CREATE TYPE public.lead_source AS ENUM ('greenhouse', 'ashby', 'lever', 'workday', 'direct', 'other');
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.job_leads (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_name            TEXT NOT NULL,
+  job_role                TEXT NOT NULL,
+  job_url                 TEXT NOT NULL,
+  job_description         TEXT,
+  location                TEXT,
+  source                  public.lead_source NOT NULL DEFAULT 'other',
+  source_id               TEXT,
+  status                  public.lead_status NOT NULL DEFAULT 'new',
+  assigned_to             UUID REFERENCES public.students(id) ON DELETE SET NULL,
+  assigned_application_id UUID REFERENCES public.applications(id) ON DELETE SET NULL,
+  discovered_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_leads_url ON public.job_leads(job_url);
+CREATE INDEX IF NOT EXISTS idx_job_leads_status ON public.job_leads(status);
+
+ALTER TABLE public.job_leads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "job_leads: admin full" ON public.job_leads
+  FOR ALL USING (public.current_user_role() = 'admin');
+CREATE POLICY "job_leads: counselor full" ON public.job_leads
+  FOR ALL USING (public.current_user_role() = 'counselor');
+
 -- ─── Rate limit token bucket (internal) ─────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.rate_limit_buckets (
   key             TEXT PRIMARY KEY,
@@ -21,7 +57,7 @@ CREATE OR REPLACE FUNCTION public.check_rate_limit(
   p_feature TEXT,
   p_limit INTEGER,
   p_window_seconds INTEGER
-) RETURNS TABLE(allowed BOOLEAN, limit INTEGER, remaining INTEGER, reset_at TIMESTAMPTZ)
+) RETURNS TABLE(allowed BOOLEAN, "limit" INTEGER, remaining INTEGER, reset_at TIMESTAMPTZ)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -129,6 +165,7 @@ CREATE TABLE IF NOT EXISTS public.ai_call_log (
   model             TEXT NOT NULL,
   input_tokens      INTEGER,
   output_tokens     INTEGER,
+  cost_usd          NUMERIC(12,6),
   latency_ms        INTEGER,
   status            TEXT NOT NULL CHECK (status IN ('ok','fallback','error')),
   error             TEXT,

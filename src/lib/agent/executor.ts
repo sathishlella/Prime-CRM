@@ -22,6 +22,7 @@ import {
   buildInterviewPrepUserPrompt,
 } from "@/lib/ai/prompts/interview-prep";
 import { buildHTML, generatePDFFromHTML, normalizeTextForATS } from "@/lib/ai/cv-generator";
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/infra/logger";
 
 const admin = createAdminClient;
@@ -54,7 +55,7 @@ export async function executeEvaluateStep(
   }
 
   const [{ data: student }, { data: candidateProfile }] = await Promise.all([
-    supabase.from("students").select("*, profiles(full_name, email)").eq("id", input.student_id).single(),
+    supabase.from("students").select("*, profiles!students_profile_id_fkey(full_name, email)").eq("id", input.student_id).single(),
     supabase.from("candidate_profiles").select("*").eq("student_id", input.student_id).single(),
   ]);
 
@@ -100,6 +101,7 @@ export async function executeEvaluateStep(
     return { ok: true };
   } catch (err) {
     logger.error({ requestId, error: String(err) }, "executeEvaluateStep failed");
+    Sentry.captureException(err);
     return { ok: false, error: String(err) };
   }
 }
@@ -173,7 +175,7 @@ export async function executeGenCvStep(
   }
 
   const [{ data: student }, { data: candidateProfile }] = await Promise.all([
-    supabase.from("students").select("*, profiles(full_name, email)").eq("id", input.student_id).single(),
+    supabase.from("students").select("*, profiles!students_profile_id_fkey(full_name, email)").eq("id", input.student_id).single(),
     supabase.from("candidate_profiles").select("*").eq("student_id", input.student_id).single(),
   ]);
 
@@ -242,6 +244,7 @@ export async function executeGenCvStep(
     return { ok: true, cv_id: cvRecord!.id };
   } catch (err) {
     logger.error({ requestId, error: String(err) }, "executeGenCvStep failed");
+    Sentry.captureException(err);
     return { ok: false, error: String(err) };
   }
 }
@@ -300,6 +303,7 @@ export async function executeGenPrepStep(
     return { ok: true };
   } catch (err) {
     logger.error({ requestId, error: String(err) }, "executeGenPrepStep failed");
+    Sentry.captureException(err);
     return { ok: false, error: String(err) };
   }
 }

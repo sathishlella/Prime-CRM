@@ -40,16 +40,32 @@ export default async function StudentPage() {
     applied_by_profile: Array.isArray(a.applied_by_profile) ? a.applied_by_profile[0] : a.applied_by_profile,
   }));
 
+  const { data: rawMatches = [] } = student
+    ? await supabase
+        .from("job_matches")
+        .select("id, overall_score, grade, archetype, match_reasoning, match_status, job_leads(company_name, job_role, job_url)")
+        .eq("student_id", student.id)
+        .in("match_status", ["new", "reviewed"])
+        .order("overall_score", { ascending: false })
+        .limit(10)
+    : { data: [] };
+
+  const matches = (rawMatches || []).map((m: any) => ({
+    ...m,
+    job_leads: Array.isArray(m.job_leads) ? m.job_leads[0] : m.job_leads,
+  }));
+
   return (
     <StudentDashboardClient
       firstName={profile.full_name.split(" ")[0]}
       studentId={student?.id ?? null}
       initialApplications={(applications ?? []) as Application[]}
+      initialMatches={matches as JobMatch[]}
     />
   );
 }
 
-// Shared type (also used by client component)
+// Shared types (also used by client component)
 export interface Application {
   id:                  string;
   company_name:        string;
@@ -61,4 +77,14 @@ export interface Application {
   applied_at:          string;
   updated_at:          string;
   applied_by_profile?: { id: string; full_name: string } | null;
+}
+
+export interface JobMatch {
+  id: string;
+  overall_score: number;
+  grade: string;
+  archetype: string | null;
+  match_reasoning: Record<string, unknown> | null;
+  match_status: string;
+  job_leads: { company_name: string; job_role: string; job_url: string | null };
 }

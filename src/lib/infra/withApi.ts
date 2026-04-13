@@ -7,6 +7,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { ZodError, type ZodSchema } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "./logger";
 import { getRequestId } from "./requestId";
 import { checkRateLimit, RATE_LIMITS, type RateLimitFeature } from "./rateLimit";
@@ -162,6 +163,7 @@ export function withApi<TBody = unknown>(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.error({ ...logCtx, latency_ms: Date.now() - start, error: msg }, "Request error");
+      Sentry.captureException(err);
       return NextResponse.json(
         { error: "Internal server error" },
         { status: 500, headers: { "x-request-id": requestId } }

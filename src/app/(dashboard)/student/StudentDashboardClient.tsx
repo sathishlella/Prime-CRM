@@ -6,13 +6,14 @@ import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
 import EvaluationCard from "@/components/EvaluationCard";
 import InterviewPrepCard from "@/components/InterviewPrepCard";
+import StudentChat from "@/components/StudentChat";
 import { useRealtime } from "@/lib/hooks/useRealtime";
 import { useUIStore } from "@/lib/stores/uiStore";
 import { createClient } from "@/lib/supabase/client";
 import { getEvaluationByApplication } from "@/lib/api/evaluations";
 import { getInterviewPrep } from "@/lib/api/interviewPrep";
 import type { ApplicationStatus } from "@/lib/supabase/database.types";
-import type { Application } from "./page";
+import type { Application, JobMatch } from "./page";
 
 const FILTERS: { key: ApplicationStatus | "all"; label: string }[] = [
   { key: "all",         label: "All"         },
@@ -48,8 +49,8 @@ function AppCard({ app, index }: { app: Application; index: number }) {
     if (!open || loaded) return;
     const supabase = createClient();
     Promise.all([
-      getEvaluationByApplication(supabase, app.id),
-      getInterviewPrep(supabase, app.id),
+      getEvaluationByApplication(supabase, app.id).catch(() => null),
+      getInterviewPrep(supabase, app.id).catch(() => null),
     ])
       .then(([evalData, prepData]) => {
         setEvaluation(evalData as Record<string, unknown> | null);
@@ -238,12 +239,15 @@ export default function StudentDashboardClient({
   firstName,
   studentId,
   initialApplications,
+  initialMatches,
 }: {
   firstName:           string;
   studentId:           string | null;
   initialApplications: Application[];
+  initialMatches:      JobMatch[];
 }) {
   const [apps,   setApps]   = useState<Application[]>(initialApplications);
+  const [matches] = useState<JobMatch[]>(initialMatches);
   const [filter, setFilter] = useState<ApplicationStatus | "all">("all");
   const { addToast } = useUIStore();
 
@@ -314,6 +318,52 @@ export default function StudentDashboardClient({
         <StatCard icon="🎯" value={counts.interview}    label="Interview"   delay={140} />
         <StatCard icon="📊" value={counts.total}        label="Total"       delay={210} />
       </div>
+
+      {/* ── Matches section ── */}
+      {matches.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 10 }}>Top Job Matches</div>
+          <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }} className="hide-scrollbar">
+            {matches.map((m, i) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1], delay: i * 0.04 }}
+                style={{
+                  minWidth: 220,
+                  maxWidth: 260,
+                  background: "rgba(255,255,255,0.55)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(255,255,255,0.65)",
+                  borderRadius: 16,
+                  padding: 14,
+                  boxShadow: "0 4px 18px rgba(0,0,0,0.03)",
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{m.job_leads.company_name}</div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: m.grade.startsWith("A") ? "#10b981" : m.grade.startsWith("B") ? "#3b82f6" : "#64748b",
+                      background: m.grade.startsWith("A") ? "#10b98115" : m.grade.startsWith("B") ? "#3b82f615" : "#94a3b815",
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                    }}
+                  >
+                    {m.grade}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>{m.job_leads.job_role}</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>Score: {m.overall_score}/5</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Filter tabs ── */}
       <div style={{ 
@@ -389,6 +439,8 @@ export default function StudentDashboardClient({
           ))}
         </div>
       )}
+
+      <StudentChat studentId={studentId} />
     </div>
   );
 }

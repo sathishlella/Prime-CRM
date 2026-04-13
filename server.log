@@ -1,0 +1,12 @@
+
+> prime-crm@2.0.0 start
+> next start
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+[@sentry/nextjs] DEPRECATION WARNING: disableLogger is deprecated and will be removed in a future version. Use webpack.treeshake.removeDebugLogging instead.
+Debugger listening on ws://127.0.0.1:62067/d90357fa-bb30-4ac1-8d0c-deeee2d1ca24
+For help, see: https://nodejs.org/en/docs/inspector
+ ✓ Ready in 33.2s

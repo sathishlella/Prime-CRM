@@ -1,5 +1,5 @@
 -- ============================================================
--- Prime CRM — Analytics SQL Functions
+-- Prime CRM — Analytics SQL Functions (safe/idempotent)
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION public.application_funnel()
@@ -33,7 +33,7 @@ RETURNS TABLE(archetype TEXT, total BIGINT, interviews BIGINT, offers BIGINT, co
   FROM public.evaluation_scores es
   JOIN public.applications a ON a.id = es.application_id
   GROUP BY es.archetype
-  ORDER BY conversion_rate DESC NULLS LAST;
+  ORDER BY 4 DESC NULLS LAST;
 $$ LANGUAGE sql STABLE;
 
 CREATE OR REPLACE FUNCTION public.counselor_stats(p_counselor_id UUID)

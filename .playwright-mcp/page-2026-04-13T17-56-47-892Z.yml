@@ -1,0 +1,97 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e523]:
+    - complementary [ref=e524]:
+      - link "F1 Dream Jobs" [ref=e525] [cursor=pointer]:
+        - /url: /counselor
+        - img "F1 Dream Jobs" [ref=e527]
+      - generic [ref=e528]: Navigation
+      - navigation [ref=e529]:
+        - link "Dashboard" [ref=e530] [cursor=pointer]:
+          - /url: /counselor
+          - generic [ref=e531]:
+            - img [ref=e533]
+            - generic [ref=e538]: Dashboard
+          - img [ref=e540]
+        - link "My Students" [ref=e542] [cursor=pointer]:
+          - /url: /counselor/students
+          - generic [ref=e543]:
+            - img [ref=e545]
+            - generic [ref=e550]: My Students
+        - link "Matches" [ref=e551] [cursor=pointer]:
+          - /url: /counselor/match
+          - generic [ref=e552]:
+            - img [ref=e554]
+            - generic [ref=e556]: Matches
+        - link "Agent Runs" [ref=e557] [cursor=pointer]:
+          - /url: /counselor/agents
+          - generic [ref=e558]:
+            - img [ref=e560]
+            - generic [ref=e563]: Agent Runs
+        - link "Job Leads" [ref=e564] [cursor=pointer]:
+          - /url: /counselor/leads
+          - generic [ref=e565]:
+            - img [ref=e567]
+            - generic [ref=e569]: Job Leads
+      - generic [ref=e572]:
+        - text: Prime CRM
+        - text: by F1 Dream Jobs · v2.0
+    - generic [ref=e573]:
+      - banner [ref=e574]:
+        - generic [ref=e575]:
+          - button "Notifications" [ref=e578] [cursor=pointer]:
+            - img [ref=e579]
+          - button "TC Test Counselor Counselor" [ref=e583] [cursor=pointer]:
+            - generic [ref=e584]: TC
+            - generic [ref=e585]:
+              - generic [ref=e586]: Test Counselor
+              - generic [ref=e587]: Counselor
+            - img [ref=e589]
+      - main [ref=e591]:
+        - generic [ref=e592]:
+          - generic [ref=e593]:
+            - generic [ref=e594]:
+              - heading "Counselor Dashboard" [level=2] [ref=e595]
+              - paragraph [ref=e596]: Managing 1 student · 0 total applications
+            - button "+ Add Application" [ref=e597] [cursor=pointer]:
+              - generic [ref=e598]: +
+              - text: Add Application
+          - generic [ref=e599]:
+            - generic [ref=e600]:
+              - generic [ref=e602]: "1"
+              - generic [ref=e603]: My Students
+            - generic [ref=e605]:
+              - generic [ref=e607]: "0"
+              - generic [ref=e608]: Applied
+            - generic [ref=e610]:
+              - generic [ref=e612]: "0"
+              - generic [ref=e613]: In Progress
+            - generic [ref=e615]:
+              - generic [ref=e617]: "0"
+              - generic [ref=e618]: Interview
+            - generic [ref=e620]:
+              - generic [ref=e622]: "0"
+              - generic [ref=e623]: Total
+          - textbox "Search by student, company, or role…" [ref=e626]
+          - table [ref=e629]:
+            - rowgroup [ref=e630]:
+              - row "Student Company / Role Resume Status Date Actions" [ref=e631]:
+                - columnheader "Student" [ref=e632]
+                - columnheader "Company / Role" [ref=e633]
+                - columnheader "Resume" [ref=e634]
+                - columnheader "Status" [ref=e635]
+                - columnheader "Date" [ref=e636]
+                - columnheader "Actions" [ref=e637]
+            - rowgroup [ref=e638]:
+              - row "No applications yet. Click \"+ Add Application\" to get started." [ref=e639]:
+                - cell "No applications yet. Click \"+ Add Application\" to get started." [ref=e640]
+              - row "TS Test Student Test University No applications yet + Add Application" [ref=e641]:
+                - cell "TS Test Student Test University" [ref=e642]:
+                  - generic [ref=e643]:
+                    - generic [ref=e644]: TS
+                    - generic [ref=e645]:
+                      - generic [ref=e646]: Test Student
+                      - generic [ref=e647]: Test University
+                - cell "No applications yet" [ref=e648]
+                - cell "+ Add Application" [ref=e649]:
+                  - button "+ Add Application" [ref=e650] [cursor=pointer]

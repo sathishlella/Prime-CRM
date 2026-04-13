@@ -1,0 +1,8 @@
+[    3879ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0
+[  383392ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/admin/create-user:0
+[ 1080066ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://eredvsrmrorqztrmqzdo.supabase.co/rest/v1/evaluation_scores?select=*&application_id=eq.562730ba-f333-4ed3-8e56-fa41f7fa498c:0
+[ 1080104ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://eredvsrmrorqztrmqzdo.supabase.co/rest/v1/interview_prep?select=*&application_id=eq.562730ba-f333-4ed3-8e56-fa41f7fa498c:0
+[ 1276212ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://eredvsrmrorqztrmqzdo.supabase.co/rest/v1/interview_prep?select=*&application_id=eq.48b0fe67-9b50-4427-89d5-3dd45edfd4f4:0
+[ 1276280ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://eredvsrmrorqztrmqzdo.supabase.co/rest/v1/evaluation_scores?select=*&application_id=eq.48b0fe67-9b50-4427-89d5-3dd45edfd4f4:0
+[ 1295465ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://eredvsrmrorqztrmqzdo.supabase.co/rest/v1/interview_prep?select=*&application_id=eq.562730ba-f333-4ed3-8e56-fa41f7fa498c:0
+[ 1295466ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://eredvsrmrorqztrmqzdo.supabase.co/rest/v1/evaluation_scores?select=*&application_id=eq.562730ba-f333-4ed3-8e56-fa41f7fa498c:0

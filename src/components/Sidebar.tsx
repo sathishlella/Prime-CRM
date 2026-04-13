@@ -92,13 +92,17 @@ const NAV: Record<Role, { href: string; icon: React.ReactNode; label: string }[]
   counselor: [
     { href: "/counselor",          icon: <IconGrid />,    label: "Dashboard"   },
     { href: "/counselor/students", icon: <IconUsers />,   label: "My Students" },
-    { href: "/counselor/leads",    icon: <IconSparkle />, label: "Job Leads"   },
+    { href: "/counselor/match",    icon: <IconSparkle />, label: "Matches"     },
+    { href: "/counselor/agents",   icon: <IconTrend />,   label: "Agent Runs"  },
+    { href: "/counselor/leads",    icon: <IconFolder />,  label: "Job Leads"   },
   ],
   admin: [
     { href: "/admin",             icon: <IconGrid />,    label: "Dashboard"   },
     { href: "/admin/users",       icon: <IconUsers />,   label: "Users"       },
     { href: "/admin/scanner",     icon: <IconRadar />,   label: "Scanner"     },
     { href: "/admin/analytics",   icon: <IconTrend />,   label: "Analytics"   },
+    { href: "/admin/agents",      icon: <IconSparkle />, label: "Agent Runs"  },
+    { href: "/admin/ai-costs",    icon: <IconDoc />,     label: "AI Costs"    },
   ],
 };
 
