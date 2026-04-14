@@ -29,11 +29,29 @@ export default async function CounselorLeadsPage() {
     profile: Array.isArray(s.profile) ? (s.profile[0] as { id: string; full_name: string }) : (s.profile as { id: string; full_name: string }),
   }));
 
+  // Fetch candidate profiles for fit scoring
+  const studentIds = students.map(s => s.id);
+  const { data: rawProfiles = [] } = studentIds.length
+    ? await supabase
+        .from("candidate_profiles")
+        .select("student_id, target_roles, skills")
+        .in("student_id", studentIds)
+    : { data: [] };
+
+  const candidateProfiles = (rawProfiles || []).reduce((acc, p: any) => {
+    acc[p.student_id] = {
+      target_roles: p.target_roles || [],
+      skills: p.skills || [],
+    };
+    return acc;
+  }, {} as Record<string, { target_roles: string[]; skills: string[] }>);
+
   return (
     <CounselorLeadsClient
       counselorId={session.user.id}
       initialLeads={(leads ?? []) as JobLead[]}
       students={students}
+      candidateProfiles={candidateProfiles}
     />
   );
 }

@@ -55,7 +55,7 @@ const FALLBACK_POLICY: Record<AiFeature, FeaturePolicy> = {
   "pattern-analysis": { primary: "anthropic", fallback: "groq", defaultMaxTokens: 4096 },
   match: { primary: "anthropic", fallback: "groq", defaultMaxTokens: 4096 },
   chat: { primary: "anthropic", fallback: "groq", defaultMaxTokens: 4096 },
-  "cv-generate": { primary: "anthropic", fallback: null, defaultMaxTokens: 8192 },
+  "cv-generate": { primary: "anthropic", fallback: "groq", defaultMaxTokens: 8192 },
   "cv-parse": { primary: "anthropic", fallback: null, defaultMaxTokens: 4096 },
 };
 

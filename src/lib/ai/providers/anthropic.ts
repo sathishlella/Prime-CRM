@@ -30,7 +30,7 @@ function getClient(): Anthropic {
       provider: "anthropic",
       message: "ANTHROPIC_API_KEY missing",
       code: "missing_api_key",
-      retryable: false,
+      retryable: true,
     });
   }
   _client = new Anthropic({

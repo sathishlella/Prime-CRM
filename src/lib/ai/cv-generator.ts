@@ -97,9 +97,23 @@ export async function generatePDFFromHTML(
   const chromium = await import("@sparticuz/chromium");
   const { chromium: playwrightChromium } = await import("playwright-core");
 
+  let executablePath: string | undefined;
+  try {
+    executablePath = await chromium.default.executablePath();
+  } catch {
+    // Fallback for local Windows dev where @sparticuz/chromium isn't available
+    if (process.platform === "win32") {
+      const { existsSync } = await import("fs");
+      const edgePath = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+      const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+      if (existsSync(edgePath)) executablePath = edgePath;
+      else if (existsSync(chromePath)) executablePath = chromePath;
+    }
+  }
+
   const browser = await playwrightChromium.launch({
     args: chromium.default.args,
-    executablePath: await chromium.default.executablePath(),
+    executablePath,
     headless: true,
   });
 

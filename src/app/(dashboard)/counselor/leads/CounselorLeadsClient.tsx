@@ -12,6 +12,11 @@ interface Student {
   profile: { id: string; full_name: string };
 }
 
+interface CandidateProfile {
+  target_roles: string[];
+  skills: string[];
+}
+
 const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
   greenhouse: { bg: "#d1fae5", text: "#065f46" },
   ashby: { bg: "#dbeafe", text: "#1d4ed8" },
@@ -21,14 +26,27 @@ const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
   other: { bg: "#f3f4f6", text: "#374151" },
 };
 
+function computeFitScore(lead: JobLead, profile?: CandidateProfile) {
+  if (!profile) return 0;
+  const text = `${lead.job_role} ${lead.company_name} ${lead.job_description || ""}`.toLowerCase();
+  let score = 0;
+  const keywords = [...(profile.target_roles || []), ...(profile.skills || [])];
+  keywords.forEach((kw) => {
+    if (text.includes(kw.toLowerCase())) score += 1;
+  });
+  return score;
+}
+
 export default function CounselorLeadsClient({
   counselorId: _counselorId,
   initialLeads,
   students,
+  candidateProfiles,
 }: {
   counselorId: string;
   initialLeads: JobLead[];
   students: Student[];
+  candidateProfiles: Record<string, CandidateProfile>;
 }) {
   const [leads, setLeads] = useState<JobLead[]>(initialLeads);
   const [statusFilter, setStatusFilter] = useState<string>("new");
@@ -66,6 +84,12 @@ export default function CounselorLeadsClient({
     } finally {
       setAssigning(null);
     }
+  }
+
+  function getAssignedStudentName(lead: JobLead) {
+    if (!lead.assigned_to) return null;
+    const s = students.find((s) => s.id === lead.assigned_to);
+    return s?.profile.full_name || "Unknown";
   }
 
   return (
@@ -152,9 +176,21 @@ export default function CounselorLeadsClient({
           No leads match your filters. Run a scan from the Admin Scanner page.
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: 12 }}>
           {filtered.map((lead, i) => {
             const sourceColor = SOURCE_COLORS[lead.source] || SOURCE_COLORS.other;
+            
+            // Compute fit scores for all students
+            const studentScores = students
+              .map((s) => ({
+                student: s,
+                score: computeFitScore(lead, candidateProfiles[s.id]),
+              }))
+              .sort((a, b) => b.score - a.score);
+            
+            const bestFit = studentScores[0];
+            const assignedName = getAssignedStudentName(lead);
+
             return (
               <motion.div
                 key={lead.id}
@@ -203,14 +239,44 @@ export default function CounselorLeadsClient({
                   Discovered {new Date(lead.discovered_at).toLocaleDateString()}
                 </div>
 
+                {/* Always-visible job posting link */}
                 <a
                   href={lead.job_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: 12, color: "#3b82f6", textDecoration: "none" }}
+                  style={{
+                    fontSize: 12,
+                    color: "#3b82f6",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "6px 0",
+                  }}
                 >
-                  View Posting ↗
+                  View Company Careers Page ↗
                 </a>
+
+                {/* Best fit indicator (only for unassigned leads) */}
+                {lead.status === "new" && bestFit && bestFit.score > 0 && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#10b981",
+                      background: "#d1fae5",
+                      padding: "4px 10px",
+                      borderRadius: 8,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "fit-content",
+                    }}
+                  >
+                    ⭐ Best fit: {bestFit.student.profile.full_name} ({bestFit.score} keyword matches)
+                  </div>
+                )}
 
                 {lead.status === "new" && (
                   <select
@@ -233,9 +299,9 @@ export default function CounselorLeadsClient({
                     <option value="">
                       {assigning === lead.id ? "Assigning…" : "Assign to student…"}
                     </option>
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.profile.full_name}
+                    {studentScores.map(({ student, score }) => (
+                      <option key={student.id} value={student.id}>
+                        {student.profile.full_name} {score > 0 ? `(${score} match${score > 1 ? 'es' : ''})` : ""}
                       </option>
                     ))}
                   </select>
@@ -244,16 +310,31 @@ export default function CounselorLeadsClient({
                 {lead.status === "assigned" && (
                   <div
                     style={{
-                      padding: "6px 12px",
+                      padding: "8px 12px",
                       borderRadius: 10,
                       background: "#d1fae5",
                       color: "#065f46",
-                      fontSize: 11.5,
+                      fontSize: 12,
                       fontWeight: 600,
-                      textAlign: "center",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 4,
                     }}
                   >
-                    ✓ Assigned
+                    <div>✓ Assigned to {assignedName}</div>
+                    <a
+                      href={lead.job_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: 11,
+                        color: "#065f46",
+                        textDecoration: "underline",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Open careers page ↗
+                    </a>
                   </div>
                 )}
               </motion.div>

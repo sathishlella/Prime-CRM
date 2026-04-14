@@ -47,9 +47,24 @@ export function withApi<T extends z.ZodType = z.ZodType>(
     try {
       // 1. Auth check
       const supabase = createServerClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      let session = (await supabase.auth.getSession()).data.session;
+
+      // Fallback to Bearer token in Authorization header
+      let bearerToken: string | null = null;
+      if (!session) {
+        const authHeader = req.headers.get("authorization");
+        bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+        if (bearerToken) {
+          const { data: userData, error: userError } = await supabase.auth.getUser(bearerToken);
+          if (userData?.user) {
+            session = {
+              user: userData.user,
+              access_token: bearerToken,
+              refresh_token: "",
+            } as any;
+          }
+        }
+      }
 
       if (!session) {
         logger.warn("unauthorized request");

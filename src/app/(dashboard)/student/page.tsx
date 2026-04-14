@@ -53,7 +53,7 @@ export default async function StudentPage() {
   const matches = (rawMatches || []).map((m: any) => ({
     ...m,
     job_leads: Array.isArray(m.job_leads) ? m.job_leads[0] : m.job_leads,
-  }));
+  })).filter((m: any) => m.job_leads != null);
 
   return (
     <StudentDashboardClient

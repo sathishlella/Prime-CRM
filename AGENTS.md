@@ -24,11 +24,12 @@ ADMIN sees everything — all students, all counselors, all data + analytics
 ```
 
 ### AI-Powered Features
-The platform includes several AI-driven capabilities powered by Anthropic Claude:
+The platform includes several AI-driven capabilities:
 - **Candidate Evaluation**: Analyze fit between a student's profile and a job posting, producing a score, grade, archetype, and recommendation.
 - **Tailored CV Generation**: Generate a customized PDF resume optimized for a specific job application.
 - **Interview Prep**: Generate company-specific interview questions, story banks, and preparation strategies.
 - **Job Lead Scanner**: Automatically scan Greenhouse APIs and company career pages for new job postings.
+- **Agent Runner**: Async background worker that processes AI steps (evaluate, create application, generate CV, generate prep, notify) in batches.
 
 ---
 
@@ -42,14 +43,17 @@ The platform includes several AI-driven capabilities powered by Anthropic Claude
 | Auth | Supabase Auth |
 | Storage | Supabase Storage |
 | Realtime | Supabase Realtime |
-| Styling | Tailwind CSS 3.4 |
-| Animations | Framer Motion |
+| Styling | Tailwind CSS 3.4 + inline styles |
+| Animations | Framer Motion + CSS keyframes |
 | State Management | Zustand |
 | Forms | React Hook Form + Zod |
 | Icons | SVG (inline) |
-| AI | Anthropic Claude SDK (`@anthropic-ai/sdk`) |
+| AI | Anthropic Claude SDK (`@anthropic-ai/sdk`) + Groq fallback |
 | Email | Resend (`resend`) |
 | PDF/Scraping | Playwright Core + `@sparticuz/chromium` |
+| Error Tracking | Sentry (`@sentry/nextjs`) |
+| Unit Testing | Vitest (`vitest`) |
+| E2E Testing | Playwright (`@playwright/test`) |
 
 ---
 
@@ -61,40 +65,51 @@ The platform includes several AI-driven capabilities powered by Anthropic Claude
 │   │   ├── (auth)/                   # Auth route group
 │   │   │   ├── layout.tsx            # Minimal auth layout
 │   │   │   └── login/
-│   │   │       └── page.tsx          # Login page with demo mode
+│   │   │       └── page.tsx          # Login page with demo mode UI
 │   │   ├── (dashboard)/              # Dashboard route group (protected)
 │   │   │   ├── layout.tsx            # Dashboard shell with sidebar + session check
 │   │   │   ├── admin/                # Admin portal
-│   │   │   │   ├── page.tsx          # Admin dashboard (server)
+│   │   │   │   ├── page.tsx
 │   │   │   │   ├── AdminDashboardClient.tsx
-│   │   │   │   ├── analytics/        # Admin analytics page
-│   │   │   │   ├── create-user/      # Create new users
-│   │   │   │   ├── scanner/          # Scanner configuration
-│   │   │   │   └── users/            # User management
+│   │   │   │   ├── analytics/
+│   │   │   │   ├── create-user/
+│   │   │   │   ├── scanner/
+│   │   │   │   ├── users/
+│   │   │   │   ├── agents/
+│   │   │   │   └── ai-costs/
 │   │   │   ├── counselor/            # Counselor portal
-│   │   │   │   ├── page.tsx          # Counselor dashboard
+│   │   │   │   ├── page.tsx
 │   │   │   │   ├── CounselorDashboardClient.tsx
-│   │   │   │   ├── leads/            # Job leads management
-│   │   │   │   └── students/         # Assigned students + profiles
+│   │   │   │   ├── leads/
+│   │   │   │   ├── match/
+│   │   │   │   ├── students/
+│   │   │   │   └── agents/
 │   │   │   └── student/              # Student portal
-│   │   │       ├── page.tsx          # Student dashboard
+│   │   │       ├── page.tsx
 │   │   │       ├── StudentDashboardClient.tsx
-│   │   │       ├── cvs/              # Generated CVs
-│   │   │       └── documents/        # Student documents
+│   │   │       ├── cvs/
+│   │   │       └── documents/
 │   │   ├── api/                      # API routes
-│   │   │   ├── analytics/            # Analytics data endpoint
-│   │   │   ├── candidate-profile/    # Candidate profile CRUD
-│   │   │   ├── cron/scan/            # Vercel cron job for scanning
-│   │   │   ├── email/                # Email sending endpoint
-│   │   │   ├── evaluate/             # AI candidate evaluation
+│   │   │   ├── agent/
+│   │   │   │   ├── apply/            # Queue an apply-agent run
+│   │   │   │   ├── digest/           # Daily digest cron
+│   │   │   │   ├── match/            # Manual match trigger
+│   │   │   │   └── tick/             # Worker cron (1 min)
+│   │   │   ├── analytics/
+│   │   │   ├── candidate-profile/
+│   │   │   ├── chat/
+│   │   │   ├── cron/scan/            # Vercel cron for scanning
+│   │   │   ├── email/
+│   │   │   ├── evaluate/             # AI evaluation endpoint
 │   │   │   ├── generate-cv/          # AI CV generation
 │   │   │   ├── interview-prep/       # AI interview prep
-│   │   │   ├── leads/                # Job leads API
+│   │   │   ├── leads/
 │   │   │   ├── scan/                 # Manual scanner trigger
 │   │   │   ├── students/update-counselor/
-│   │   │   └── users/delete/         # User deletion
+│   │   │   └── users/delete/
 │   │   ├── globals.css               # Global styles + design tokens
 │   │   ├── layout.tsx                # Root layout (fonts, SessionGuard, OfflineBanner)
+│   │   ├── global-error.tsx          # Sentry-wrapped error boundary
 │   │   └── page.tsx                  # Root redirect to /login
 │   ├── components/                   # Shared UI components
 │   │   ├── DashboardShell.tsx        # Layout wrapper with ambient blobs
@@ -113,9 +128,16 @@ The platform includes several AI-driven capabilities powered by Anthropic Claude
 │   │   ├── InterviewPrepCard.tsx     # Interview prep display
 │   │   ├── ScoreBadge.tsx            # Score badge component
 │   │   ├── GenerateCVModal.tsx       # CV generation modal
+│   │   ├── MatchCard.tsx             # Job match card
+│   │   ├── AgentRunCard.tsx          # Agent run status card
+│   │   ├── AgentRunsViewer.tsx       # Agent runs list
+│   │   ├── StudentChat.tsx           # Student chat panel
+│   │   ├── ChatPanel.tsx             # Generic chat panel
+│   │   ├── ChatMessage.tsx           # Chat message bubble
 │   │   ├── Avatar.tsx                # User avatar
 │   │   ├── StatCard.tsx              # Statistic card
 │   │   ├── Skeleton.tsx              # Loading shimmer
+│   │   ├── ProgressBar.tsx           # Progress indicator
 │   │   └── BlobBackground.tsx        # Animated background blobs
 │   └── lib/                          # Utilities and business logic
 │       ├── supabase/
@@ -143,25 +165,69 @@ The platform includes several AI-driven capabilities powered by Anthropic Claude
 │       ├── actions/
 │       │   └── createUser.ts         # Server action for user creation
 │       ├── ai/
-│       │   ├── claude.ts             # Claude API client wrapper
-│       │   ├── cv-generator.ts       # CV generation logic
+│       │   ├── router.ts             # Unified AI router with fallback + cost logging
+│       │   ├── claude.ts             # Legacy Claude wrapper (still used in some spots)
+│       │   ├── cv-generator.ts       # CV generation logic (Playwright + HTML)
 │       │   ├── cv-parser.ts          # CV parsing utilities
-│       │   ├── prompts/              # AI prompts (evaluate, interview-prep, etc.)
-│       │   └── templates/            # CV templates
+│       │   ├── prompts/              # AI prompts
+│       │   │   ├── evaluate.ts
+│       │   │   ├── cv-tailor.ts
+│       │   │   ├── interview-prep.ts
+│       │   │   └── pattern-analysis.ts
+│       │   ├── providers/
+│       │   │   ├── anthropic.ts
+│       │   │   ├── groq.ts
+│       │   │   └── types.ts
+│       │   └── templates/            # CV HTML templates
+│       ├── agent/
+│       │   └── executor.ts           # Agent step implementations
 │       ├── scanner/
 │       │   ├── index.ts              # Portal scanning orchestrator
 │       │   ├── filters.ts            # Job title filtering logic
 │       │   └── portals-config.ts     # Default tracked companies & filters
-│       └── email/
-│           └── index.ts              # Resend email templates & senders
+│       ├── email/
+│       │   └── index.ts              # Resend email templates & senders
+│       ├── http/
+│       │   ├── withApi.ts            # HOF for auth, RBAC, rate limit, Zod
+│       │   ├── rateLimit.ts          # In-memory rate limiter
+│       │   └── zodSchemas.ts         # Shared Zod schemas for API routes
+│       ├── logging/
+│       │   ├── logger.ts             # Structured JSON stdout logger
+│       │   └── requestId.ts          # Request ID extraction
+│       ├── security/
+│       │   └── csp.ts                # CSP helpers
+│       └── sentry/
+│           └── init.ts               # Sentry init helpers
 ├── supabase/
-│   └── migrations/                   # Database migrations (NOT schema.sql)
+│   └── migrations/                   # Database migrations
 │       ├── 001_prime_crm_ai_tables.sql
-│       └── 002_analytics_functions.sql
+│       ├── 002_analytics_functions.sql
+│       └── 003_agentic.sql
+├── tests/
+│   ├── e2e/                          # Playwright end-to-end tests
+│   │   ├── global.setup.ts           # Auth setup for 3 roles
+│   │   ├── 01-login.spec.ts
+│   │   ├── 02-admin.spec.ts
+│   │   ├── 03-counselor.spec.ts
+│   │   ├── 04-student.spec.ts
+│   │   ├── 05-rate-limit.spec.ts
+│   │   ├── 06-security-headers.spec.ts
+│   │   ├── 07-zod-validation.spec.ts
+│   │   └── 08-cv-hard-fail.spec.ts
+│   └── unit/                         # Vitest unit tests
+│       ├── ai/router.test.ts
+│       └── http/
+│           ├── rateLimit.test.ts
+│           └── zodSchemas.test.ts
 ├── middleware.ts                     # Auth + role-based routing
 ├── tailwind.config.ts                # Tailwind customization
-├── next.config.js                    # Next.js config + security headers
+├── next.config.js                    # Next.js config + security headers + Sentry
 ├── vercel.json                       # Vercel cron jobs + function config
+├── vitest.config.ts                  # Vitest configuration
+├── playwright.config.ts              # Playwright configuration
+├── sentry.server.config.ts           # Sentry server config
+├── sentry.edge.config.ts             # Sentry edge config
+├── instrumentation.ts                # Next.js instrumentation hook
 └── package.json                      # Dependencies
 ```
 
@@ -187,6 +253,24 @@ npm run lint
 
 # TypeScript type check (no emit)
 npm run type-check
+
+# Run unit tests (Vitest, node environment)
+npm run test
+
+# Run unit tests in watch mode
+npm run test:watch
+
+# Run unit tests with coverage
+npm run test:coverage
+
+# Run E2E tests (Playwright, auto-starts dev server locally)
+npm run test:e2e
+
+# Run E2E tests with UI
+npm run test:e2e:ui
+
+# Load testing (k6)
+npm run load
 ```
 
 ---
@@ -215,18 +299,28 @@ RESEND_API_KEY=re_your_api_key_here
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 CLAUDE_MODEL=claude-sonnet-4-20250514
 
+# ─── Groq AI Fallback ────────────────────────────────────────────────────────
+GROQ_API_KEY=gsk_your_key_here
+
 # ─── Cron Security ───────────────────────────────────────────────────────────
 CRON_SECRET=generate-a-random-32-char-string
+
+# ─── Sentry ──────────────────────────────────────────────────────────────────
+SENTRY_AUTH_TOKEN=your_sentry_auth_token
+SENTRY_ORG=o4511213641334784
+SENTRY_PROJECT=prime-crm
 ```
 
 ### Demo Mode Credentials
-When `NEXT_PUBLIC_DEMO_MODE=true`, use these credentials:
+When `NEXT_PUBLIC_DEMO_MODE=true`, the following demo accounts are baked into `src/lib/hooks/useAuth.ts`:
 
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | admin@consultpro.com | demo123 |
 | Counselor | priya@consultpro.com | demo123 |
 | Student | sarah@student.com | demo123 |
+
+**Note:** The login page UI (`src/app/(auth)/login/page.tsx`) displays slightly different emails (`admin@f1dreamjobs.com`, `priya@f1dreamjobs.com`) but the actual demo auth logic in `useAuth.ts` accepts the `@consultpro.com` variants. Both domains may work depending on which auth path a page uses.
 
 ---
 
@@ -244,8 +338,9 @@ The app has three roles with a strict hierarchy:
 
 ### Middleware Protection (`middleware.ts`)
 1. Redirects unauthenticated users to `/login`
-2. Redirects authenticated users away from `/login` to their role home
+2. Redirects authenticated users away from `/login` to their role home (`/admin`, `/counselor`, `/student`)
 3. Blocks cross-role access (e.g., a student cannot visit `/admin`)
+4. Injects `x-request-id` header for tracing
 
 ### Idle Timeout
 Sessions automatically expire after **30 minutes of inactivity**. The `useAuth` hook tracks user activity (`mousemove`, `keydown`, etc.) and signs out idle users. In demo mode, the timeout is also enforced via `localStorage` session expiry.
@@ -254,7 +349,12 @@ Sessions automatically expire after **30 minutes of inactivity**. The `useAuth` 
 
 ## Database Schema
 
-Database migrations live in `supabase/migrations/` (not `supabase/schema.sql`). Apply them via the Supabase SQL Editor or CLI.
+Database migrations live in `supabase/migrations/`:
+- `001_prime_crm_ai_tables.sql` — Core CRM + AI feature tables + RLS
+- `002_analytics_functions.sql` — SQL analytics functions
+- `003_agentic.sql` — Agent runs, steps, job matches, AI call logging
+
+Apply them via the Supabase SQL Editor or CLI.
 
 ### Core Tables
 
@@ -267,17 +367,21 @@ Database migrations live in `supabase/migrations/` (not `supabase/schema.sql`). 
 | `documents` | File metadata; actual files in Supabase Storage bucket `documents` |
 | `notifications` | Per-user notification feed |
 
-### AI Tables
+### AI & Agent Tables
 
 | Table | Purpose |
 |-------|---------|
 | `candidate_profiles` | Structured candidate data: target roles, skills, narrative, deal breakers |
-| `evaluation_scores` | AI evaluation results per application (score, grade, archetype, recommendation) |
+| `evaluation_scores` | AI evaluation results per application |
 | `generated_cvs` | Metadata for AI-generated PDF CVs stored in `generated-cvs` bucket |
 | `interview_prep` | AI-generated interview prep data per application |
 | `job_leads` | Discovered job postings from the scanner |
+| `job_matches` | AI-evaluated matches between students and job leads |
 | `scan_history` | History of scanned URLs with deduplication |
-| `scanner_config` | Scanner settings: tracked companies, title filters, search queries |
+| `scanner_config` | Scanner settings: tracked companies, title filters |
+| `agent_runs` | Top-level async job records (apply, digest, etc.) |
+| `agent_run_steps` | Individual steps within an agent run |
+| `ai_call_log` | Persisted AI call metadata for cost tracking |
 
 ### Enums
 
@@ -313,9 +417,9 @@ Defined in `supabase/migrations/002_analytics_functions.sql`:
 
 ### Visual Language
 
-- **Glass morphism**: `background: rgba(255,255,255,0.78)`, `backdropFilter: blur(40px)`, rounded corners (20px)
+- **Glass morphism**: `background: rgba(255,255,255,0.78)`, `backdropFilter: blur(40px)`, rounded corners (20-24px)
 - **Ambient blobs**: 3 animated radial-gradient blobs (blue/mint/violet) at very low opacity (3-7%)
-- **Easing**: Always `cubic-bezier(.4,0,.2,1)` (stored as CSS var `--ease`)
+- **Easing**: Always `cubic-bezier(.4,0,.2,1)`
 - **Font**: `'Inter'` (Google Fonts), weights 300-800
 
 ### Status Colors
@@ -373,6 +477,7 @@ Extensive mobile-first CSS is in `globals.css`:
 // Browser/client component
 import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
+// Note: in demo mode this returns a mock client with empty responses.
 
 // Server Component
 import { createServerClient } from "@/lib/supabase/server";
@@ -381,6 +486,31 @@ const supabase = createServerClient();
 // Admin operations (bypass RLS)
 import { createAdminClient } from "@/lib/supabase/server";
 const admin = createAdminClient();
+```
+
+### API Routes with `withApi`
+
+All new API routes should use the `withApi` higher-order function (`src/lib/http/withApi.ts`). It provides:
+- Session authentication
+- Profile + RBAC check (`requireRole`)
+- In-memory rate limiting (`rateLimit`)
+- Zod body validation (`schema`)
+- Request ID injection
+- Structured JSON logging
+- Consistent error envelopes (`{ error, message, requestId }`)
+
+Example:
+```typescript
+import { withApi } from "@/lib/http/withApi";
+import { mySchema } from "@/lib/http/zodSchemas";
+
+export const POST = withApi(
+  { schema: mySchema, requireRole: ["admin", "counselor"], rateLimit: { bucket: "my-feature", limit: 5, windowMs: 60_000 } },
+  async ({ body, user, requestId, logger }) => {
+    // ... business logic
+    return Response.json({ data: ... });
+  }
+);
 ```
 
 ### API Functions with Demo Mode
@@ -398,7 +528,7 @@ export async function getApplications() {
 }
 ```
 
-In demo mode, mutations update in-memory arrays (`demoApplications`, `demoStudents`) so the UI responds immediately.
+In demo mode, some mutations update in-memory arrays (`demoApplications`, `demoStudents`) so the UI responds immediately.
 
 ### Form Handling
 
@@ -456,19 +586,19 @@ Status changes and AI-generated content trigger real-time updates:
 3. Supabase Realtime broadcasts change
 4. Dashboard updates live (no page refresh)
 
-Tables enabled for Realtime: `applications`, `notifications`, `evaluation_scores`, `job_leads`, `interview_prep`
+Tables enabled for Realtime: `applications`, `notifications`, `evaluation_scores`, `job_leads`, `interview_prep`, `agent_runs`, `agent_run_steps`
 
 ---
 
 ## AI Features
 
-### Claude Integration (`src/lib/ai/claude.ts`)
+### AI Router (`src/lib/ai/router.ts`)
 
-All AI calls go through `callClaude<T>(systemPrompt, userPrompt)` which:
-- Uses `ANTHROPIC_API_KEY` and `CLAUDE_MODEL`
-- Retries up to 3 times with exponential backoff
-- Extracts JSON from markdown code blocks if present
-- Returns `{ data, usage }`
+All new AI calls should go through `aiJson<T>()` or `aiText()` in the router. It provides:
+- **Per-feature fallback policy**: Most features use Anthropic primary → Groq fallback on transient errors (`status >= 500`, `429`, timeout/abort). `cv-generate` and `cv-parse` have **no fallback** — they hard-fail with `AI_CV_UNAVAILABLE` rather than producing an inferior CV.
+- **Cost tracking**: Estimates USD cost per call and persists to `ai_call_log`.
+- **Observability**: Every call is logged as a single JSON line to stdout.
+- **Sentry integration**: Errors are captured automatically.
 
 ### Candidate Evaluation (`/api/evaluate`)
 
@@ -498,6 +628,27 @@ Results are saved to `interview_prep`.
 
 ---
 
+## Agent Runner
+
+The agent runner is an async background job system for batch AI operations (primarily the "apply agent").
+
+### How it works
+1. A counselor triggers `/api/agent/apply` with a student and selected job matches.
+2. An `agent_runs` record is created with `status: "queued"`.
+3. `agent_run_steps` are created (4 per job): `evaluate` → `create_app` → `gen_cv` → `gen_prep` → `notify`.
+4. The `/api/agent/tick` cron (every 1 minute) pulls pending steps, locks them, and dispatches to `src/lib/agent/executor.ts`.
+5. Step results cascade (e.g., `create_app` writes the `application_id` into sibling steps).
+6. Run aggregates are updated after each tick batch.
+
+### Cron Jobs (`vercel.json`)
+- `/api/cron/scan` — scan for job leads every 6 hours
+- `/api/agent/digest` — daily digest at 07:00
+- `/api/agent/tick` — process agent steps every 1 minute
+
+All cron endpoints are protected by `CRON_SECRET` (`Authorization: Bearer {CRON_SECRET}`).
+
+---
+
 ## Job Scanner
 
 ### Scanner Logic (`src/lib/scanner/index.ts`)
@@ -514,17 +665,6 @@ Jobs are filtered by title using `positive` and `negative` keyword lists from `s
 
 New listings are checked against `scan_history` (unique index on `job_url`). Duplicates are skipped.
 
-### Cron Job
-
-`vercel.json` configures an automatic scan every 6 hours:
-```json
-{
-  "crons": [{ "path": "/api/cron/scan", "schedule": "0 */6 * * *" }]
-}
-```
-
-The cron endpoint is protected by `CRON_SECRET` (via `Authorization: Bearer {CRON_SECRET}`).
-
 ---
 
 ## Security Considerations
@@ -533,8 +673,11 @@ The cron endpoint is protected by `CRON_SECRET` (via `Authorization: Bearer {CRO
 
 - `X-Frame-Options: DENY`
 - `X-Content-Type-Options: nosniff`
+- `X-DNS-Prefetch-Control: off`
 - `Referrer-Policy: strict-origin-when-cross-origin`
-- Content Security Policy configured for Supabase, Google Fonts, and Anthropic API resources
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+- `Permissions-Policy` — camera/mic/geolocation/payment disabled
+- Content Security Policy configured for Supabase, Google Fonts, Anthropic API, and Sentry resources
 
 ### Important Rules
 
@@ -542,17 +685,32 @@ The cron endpoint is protected by `CRON_SECRET` (via `Authorization: Bearer {CRO
 2. **Always** use RLS policies for data access control
 3. **Validate** all inputs with Zod schemas before processing
 4. **Sanitize** user-generated content before display
-5. **Check** role permissions in middleware and server actions for sensitive routes
+5. **Check** role permissions in middleware, server actions, and `withApi` for sensitive routes
 6. **Protect** cron and admin API routes with secrets or session checks
 
 ---
 
 ## Testing Strategy
 
-Currently, the project uses:
-- **TypeScript** for compile-time type safety (`npm run type-check`)
+### Unit Tests (Vitest)
+- Config: `vitest.config.ts`
+- Environment: `node`
+- Globals enabled
+- Test files: `tests/unit/**/*.test.ts`
+- Coverage includes: `src/lib/ai/**`, `src/lib/http/**`, `src/lib/logging/**`
+- Run: `npm run test` / `npm run test:coverage`
+
+### E2E Tests (Playwright)
+- Config: `playwright.config.ts`
+- Test directory: `tests/e2e`
+- Auto-starts dev server when not in CI (`npm run dev`)
+- `global.setup.ts` authenticates all 3 roles and saves storage state
+- Subsequent tests reuse authenticated contexts from `.auth/`
+- Run: `npm run test:e2e` / `npm run test:e2e:ui`
+
+### Static Analysis
+- **TypeScript** compile-time checks (`npm run type-check`)
 - **ESLint** for code quality (`npm run lint`)
-- **Demo mode** for manual testing without a live Supabase project
 
 ### Manual Testing Checklist
 
@@ -565,6 +723,7 @@ Currently, the project uses:
 - [ ] Change application status and verify real-time update + email
 - [ ] Test AI evaluation, CV generation, and interview prep
 - [ ] Run scanner manually via `/api/scan` and verify job leads
+- [ ] Queue an apply-agent run and verify steps complete via `/api/agent/tick`
 
 ---
 
@@ -582,6 +741,7 @@ Currently, the project uses:
 - All environment variables configured
 - Supabase project with migrations applied (`supabase/migrations/*.sql`)
 - Supabase Storage buckets created: `documents`, `generated-cvs`
+- Vercel Cron Jobs enabled (configured in `vercel.json`)
 
 ---
 
@@ -592,8 +752,9 @@ Currently, the project uses:
 | `CLAUDE.md` | High-level project overview and build sequence |
 | `ConsultPro-CRM-Prompts.md` | Sequential prompts for production implementation |
 | `consultpro-crm-sample.jsx` | Standalone React demo (no build step) |
-| `supabase/migrations/001_prime_crm_ai_tables.sql` | AI feature tables + RLS |
+| `supabase/migrations/001_prime_crm_ai_tables.sql` | Core + AI tables + RLS |
 | `supabase/migrations/002_analytics_functions.sql` | Analytics SQL functions |
+| `supabase/migrations/003_agentic.sql` | Agent runs, steps, matches, AI call log |
 
 ---
 
@@ -606,6 +767,13 @@ Currently, the project uses:
 3. Use TypeScript types from `database.types.ts`
 4. Return `{ data, error }` shape
 5. If it triggers an email, use the fire-and-forget `/api/email` pattern
+
+### Adding a New API Route
+
+1. Create `route.ts` under `src/app/api/{feature}/`
+2. Wrap handler with `withApi` from `src/lib/http/withApi.ts`
+3. Add Zod schema to `src/lib/http/zodSchemas.ts`
+4. Apply `requireRole` and `rateLimit` as appropriate
 
 ### Adding a New Page
 
@@ -631,7 +799,7 @@ Currently, the project uses:
 ### Adding a New AI Feature
 
 1. Add the prompt in `src/lib/ai/prompts/`
-2. Add any orchestration logic in `src/lib/ai/`
+2. Wire it through `src/lib/ai/router.ts` (add a `AiFeature` if needed)
 3. Create an API route in `src/app/api/`
 4. Add a client-side API wrapper in `src/lib/api/` if needed
 5. Add UI component(s) in `src/components/`

@@ -46,17 +46,37 @@ export const POST = withApi(
         .single() as any;
 
       const keywords = new Set<string>();
-      ((candidateProfile as any)?.target_roles || []).forEach((k: string) => keywords.add(k.toLowerCase()));
-      ((candidateProfile as any)?.skills || []).forEach((k: string) => keywords.add(k.toLowerCase()));
+      const genericTerms = ["engineer", "developer", "scientist", "analyst", "manager", "designer", "intern", "associate", "specialist", "consultant", "architect"];
+      genericTerms.forEach((t) => keywords.add(t));
+      ((candidateProfile as any)?.target_roles || []).forEach((k: string) => {
+        k.toLowerCase().split(/\s+/).forEach((w) => {
+          if (w.length > 2 && !["and", "the", "for", "with"].includes(w)) keywords.add(w);
+        });
+      });
+      ((candidateProfile as any)?.skills || []).forEach((k: string) => {
+        k.toLowerCase().split(/\s+/).forEach((w) => {
+          if (w.length > 2 && !["and", "the", "for", "with"].includes(w)) keywords.add(w);
+        });
+      });
+
+      // Fetch IDs already matched for this student
+      const { data: matchedRows } = await supabase
+        .from("job_matches")
+        .select("job_lead_id")
+        .eq("student_id", student_id);
+      const matchedIds = (matchedRows || []).map((m) => m.job_lead_id).filter(Boolean);
 
       // Fetch unassigned leads not yet matched for this student
-      const { data: leads } = await supabase
+      let leadsQuery = supabase
         .from("job_leads")
         .select("id, company_name, job_role, job_description, job_url, location")
         .eq("status", "new")
-        .not("id", "in", supabase.from("job_matches").select("job_lead_id").eq("student_id", student_id))
         .order("discovered_at", { ascending: false })
         .limit(50);
+      if (matchedIds.length > 0) {
+        leadsQuery = leadsQuery.not("id", "in", `(${matchedIds.join(",")})`);
+      }
+      const { data: leads } = await leadsQuery;
 
       // Cheap pre-filter by keywords if we have them
       let filteredLeads = leads || [];

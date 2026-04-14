@@ -155,9 +155,9 @@ async function processListing(
   // Add to job_leads
   await supabase.from("job_leads").insert({
     company_name: listing.company_name,
-    job_title: listing.job_title,
+    job_role: listing.job_title,
     job_url: listing.job_url,
-    source_portal: listing.source_portal,
+    source: listing.source_portal,
   });
 
   // Record in scan_history
