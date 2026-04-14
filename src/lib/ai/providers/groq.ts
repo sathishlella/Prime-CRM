@@ -7,9 +7,8 @@
  * (unlike Claude) returns raw JSON in choices[0].message.content with no
  * markdown fences.
  *
- * Hard-coded fallback API key per project owner request: if GROQ_API_KEY is
- * unset, fall back to the embedded key. This is intentional — the entire
- * point of Groq here is to be the always-on backup.
+ * Requires GROQ_API_KEY environment variable. Set it in .env.local or
+ * Vercel dashboard. Get a free key at https://console.groq.com
  */
 
 import {
@@ -23,11 +22,8 @@ import {
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
-// Hard-coded fallback key — overridden by GROQ_API_KEY env if present.
-const EMBEDDED_FALLBACK_KEY = "GROQ_KEY_REMOVED";
-
 function getApiKey(): string {
-  return process.env.GROQ_API_KEY || EMBEDDED_FALLBACK_KEY;
+  return process.env.GROQ_API_KEY ?? "";
 }
 
 function getModel(): string {
