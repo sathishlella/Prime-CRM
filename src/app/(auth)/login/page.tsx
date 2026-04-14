@@ -99,7 +99,9 @@ function FloatingInput({
         }}
         style={{
           width:          "100%",
-          padding:        floating ? "22px 14px 8px" : "15px 14px",
+          paddingTop:     floating ? 22 : 15,
+          paddingBottom:  floating ? 8 : 15,
+          paddingLeft:    14,
           paddingRight:   suffix ? 42 : 14,
           border:         `1.5px solid ${error ? "rgba(220,38,38,0.45)" : focused ? "rgba(10,110,189,0.5)" : "rgba(0,0,0,0.09)"}`,
           borderRadius:   14,
