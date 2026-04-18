@@ -44,7 +44,7 @@ export const POST = withApi(
         .select("id, job_lead_id, overall_score, grade, archetype, match_reasoning, job_leads(company_name, job_role, job_description, job_url)")
         .in("id", job_match_ids)
         .eq("student_id", student_id)
-        .eq("match_status", "new");
+        .in("match_status", ["new", "reviewed"]);
 
       if (!matches || matches.length === 0) {
         logger.warn("no valid job matches found", { student_id });

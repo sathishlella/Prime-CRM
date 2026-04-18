@@ -47,6 +47,27 @@ export const chatSchema = z.object({
   message: z.string().min(1).max(4000),
 });
 
+export const keywordsSchema = z.object({
+  match_id: z.string().uuid("Invalid match ID"),
+});
+
+export const coverLetterSchema = z.object({
+  student_id: z.string().uuid("Invalid student ID"),
+  match_id: z.string().uuid("Invalid match ID"),
+  emphasis_keywords: z.array(z.string().min(1).max(80)).max(20).optional(),
+});
+
+export const tailorCvSchema = z.object({
+  student_id: z.string().uuid("Invalid student ID"),
+  match_id: z.string().uuid("Invalid match ID"),
+  emphasis_keywords: z.array(z.string().min(1).max(80)).max(20).optional(),
+});
+
+export const recordApplicationSchema = z.object({
+  student_id: z.string().uuid("Invalid student ID"),
+  match_id: z.string().uuid("Invalid match ID"),
+});
+
 // Non-AI Routes
 
 export const candidateProfileSchema = z.object({
@@ -106,6 +127,10 @@ export type InterviewPrepRequest = z.infer<typeof interviewPrepSchema>;
 export type MatchAgentRequest = z.infer<typeof matchAgentSchema>;
 export type ApplyAgentRequest = z.infer<typeof applyAgentSchema>;
 export type ChatRequest = z.infer<typeof chatSchema>;
+export type KeywordsRequest = z.infer<typeof keywordsSchema>;
+export type CoverLetterRequest = z.infer<typeof coverLetterSchema>;
+export type TailorCvRequest = z.infer<typeof tailorCvSchema>;
+export type RecordApplicationRequest = z.infer<typeof recordApplicationSchema>;
 export type CandidateProfileRequest = z.infer<typeof candidateProfileSchema>;
 export type AssignLeadRequest = z.infer<typeof assignLeadSchema>;
 export type UpdateCounselorRequest = z.infer<typeof updateCounselorSchema>;

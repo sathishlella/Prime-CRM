@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createServerClient } from "@/lib/supabase/server";
 import { createLogger } from "@/lib/logging/logger";
 import { getRequestId } from "@/lib/logging/requestId";
 import {
@@ -10,19 +10,32 @@ import {
   executeNotifyStep,
 } from "@/lib/agent/executor";
 
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 10;
 const MAX_ATTEMPTS = 3;
 
-export async function POST(req: NextRequest): Promise<Response> {
+async function authenticate(req: NextRequest): Promise<{ ok: boolean; actor: string }> {
+  const authHeader = req.headers.get("authorization");
+  if (authHeader === `Bearer ${process.env.CRON_SECRET}`) {
+    return { ok: true, actor: "cron" };
+  }
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, actor: "anon" };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role === "admin") return { ok: true, actor: `admin:${user.id}` };
+  return { ok: false, actor: user.id };
+}
+
+async function handleTick(req: NextRequest): Promise<Response> {
   const requestId = getRequestId(req);
   const logger = createLogger(requestId, "/api/agent/tick");
 
   try {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      logger.warn("invalid cron secret");
+    const auth = await authenticate(req);
+    if (!auth.ok) {
+      logger.warn("unauthorized tick", { actor: auth.actor });
       return Response.json(
-        { error: "UNAUTHORIZED", message: "Invalid cron secret", requestId },
+        { error: "UNAUTHORIZED", message: "Requires cron secret or admin role", requestId },
         { status: 401 }
       );
     }
@@ -180,6 +193,9 @@ export async function POST(req: NextRequest): Promise<Response> {
     throw err;
   }
 }
+
+export const POST = handleTick;
+export const GET = handleTick;
 
 async function cascadeApplicationId(
   supabase: ReturnType<typeof createAdminClient>,

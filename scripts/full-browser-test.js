@@ -5,7 +5,7 @@
  */
 const { chromium } = require("playwright-core");
 
-const BASE = "http://localhost:3001";
+const BASE = process.env.BASE_URL || "http://localhost:3001";
 
 const ACCOUNTS = {
   admin:     { email: "sathish@f1dreamjobs.com",       password: "Admin@1234" },
