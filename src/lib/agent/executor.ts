@@ -12,6 +12,12 @@ import {
   buildEvaluationUserPrompt,
 } from "@/lib/ai/prompts/evaluate";
 import {
+  MatchResult,
+  buildMatchSystemPrompt,
+  buildMatchUserPrompt,
+  extractCvSummary,
+} from "@/lib/ai/prompts/match";
+import {
   CVTailorResult,
   buildCVTailorSystemPrompt,
   buildCVTailorUserPrompt,
@@ -68,33 +74,27 @@ export async function executeEvaluateStep(
     : (rawProfiles as { full_name: string; email: string });
 
   try {
-    const { data: evaluation } = await callClaude<EvaluationResult>(
-      buildEvaluationSystemPrompt(),
-      buildEvaluationUserPrompt(
-        {
-          full_name: studentProfile?.full_name ?? "Student",
-          cv_markdown: candidateProfile?.cv_markdown || null,
-          target_roles: candidateProfile?.target_roles || [],
-          skills: candidateProfile?.skills || [],
-          compensation_target: (candidateProfile?.compensation_target as unknown as string | null) || null,
-          visa_status: student.visa_status,
-          university: student.university,
-          major: student.major,
-        },
-        input.job_description || "",
+    // Lightweight match prompt — score + grade + 3 reasons only (~80 output tokens)
+    const { data: match } = await callClaude<MatchResult>(
+      buildMatchSystemPrompt(),
+      buildMatchUserPrompt(
+        candidateProfile?.skills || [],
+        candidateProfile?.target_roles || [],
+        extractCvSummary(candidateProfile?.cv_markdown || null),
+        input.job_role,
         input.company_name,
-        input.job_role
+        input.job_description || ""
       ),
-      { feature: "match", maxTokens: 4096 }
+      { feature: "match", maxTokens: 256 }
     );
 
     const { error } = await supabase.from("job_matches").insert({
       student_id: input.student_id,
       job_lead_id: input.lead_id,
-      overall_score: evaluation.overall_score,
-      grade: evaluation.grade,
-      archetype: evaluation.archetype,
-      match_reasoning: evaluation.blocks as unknown as Record<string, unknown>,
+      overall_score: match.score,
+      grade: match.grade,
+      archetype: null,
+      match_reasoning: { reasons: match.reasons, recommendation: match.recommendation } as unknown as Record<string, unknown>,
       match_status: "new",
     });
 
