@@ -2,6 +2,47 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { matchesFilters } from "./filters";
 import { DEFAULT_TRACKED_COMPANIES, DEFAULT_TITLE_FILTERS } from "./portals-config";
 
+const US_LOCATION_KEYWORDS = [
+  "united states", "usa", "u.s.a", "u.s.",
+  "remote", // all companies in list are US-based, so remote = US remote
+  // US states
+  "alabama","alaska","arizona","arkansas","california","colorado","connecticut",
+  "delaware","florida","georgia","hawaii","idaho","illinois","indiana","iowa",
+  "kansas","kentucky","louisiana","maine","maryland","massachusetts","michigan",
+  "minnesota","mississippi","missouri","montana","nebraska","nevada",
+  "new hampshire","new jersey","new mexico","new york","north carolina",
+  "north dakota","ohio","oklahoma","oregon","pennsylvania","rhode island",
+  "south carolina","south dakota","tennessee","texas","utah","vermont",
+  "virginia","washington","west virginia","wisconsin","wyoming",
+  // state abbreviations and major cities
+  " ca,"," ny,"," tx,"," wa,"," il,"," fl,"," co,"," ma,"," ga,"," nc,",
+  "san francisco","san jose","new york","los angeles","seattle","chicago",
+  "austin","boston","denver","atlanta","miami","brooklyn","san diego",
+  "menlo park","mountain view","palo alto","redwood city","sunnyvale",
+  "cupertino","bellevue","kirkland","cambridge",
+];
+
+const NON_US_KEYWORDS = [
+  "canada","toronto","vancouver","montreal","calgary",
+  "united kingdom","london","manchester","edinburgh",
+  "germany","berlin","munich","frankfurt",
+  "france","paris",
+  "india","bangalore","hyderabad","pune","mumbai","chennai",
+  "australia","sydney","melbourne",
+  "singapore","japan","tokyo","china","beijing","shanghai",
+  "brazil","mexico","netherlands","amsterdam",
+  "ireland","dublin","sweden","stockholm",
+];
+
+function isUSLocation(location: string | null | undefined): boolean {
+  if (!location || location.trim() === "") return true; // no location = don't filter out
+  const loc = location.toLowerCase();
+  if (NON_US_KEYWORDS.some((kw) => loc.includes(kw))) return false;
+  if (US_LOCATION_KEYWORDS.some((kw) => loc.includes(kw.trim()))) return true;
+  // If we can't determine, keep it (better to over-include than miss US jobs)
+  return true;
+}
+
 interface ScanResult {
   leads_found: number;
   leads_new: number;
@@ -57,6 +98,13 @@ export async function scanPortals(
       const jobs = data.jobs || [];
 
       for (const job of jobs) {
+        // USA-only filter using Greenhouse location field
+        const locationName = job.location?.name as string | undefined;
+        if (!isUSLocation(locationName)) {
+          results.leads_filtered++;
+          continue;
+        }
+
         const listing: JobListing = {
           company_name: company.name,
           job_title: job.title,

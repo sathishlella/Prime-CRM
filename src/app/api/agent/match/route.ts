@@ -45,20 +45,6 @@ export const POST = withApi(
         .eq("student_id", student_id)
         .single() as any;
 
-      const keywords = new Set<string>();
-      const genericTerms = ["engineer", "developer", "scientist", "analyst", "manager", "designer", "intern", "associate", "specialist", "consultant", "architect"];
-      genericTerms.forEach((t) => keywords.add(t));
-      ((candidateProfile as any)?.target_roles || []).forEach((k: string) => {
-        k.toLowerCase().split(/\s+/).forEach((w) => {
-          if (w.length > 2 && !["and", "the", "for", "with"].includes(w)) keywords.add(w);
-        });
-      });
-      ((candidateProfile as any)?.skills || []).forEach((k: string) => {
-        k.toLowerCase().split(/\s+/).forEach((w) => {
-          if (w.length > 2 && !["and", "the", "for", "with"].includes(w)) keywords.add(w);
-        });
-      });
-
       // Fetch IDs already matched for this student
       const { data: matchedRows } = await supabase
         .from("job_matches")
@@ -72,22 +58,15 @@ export const POST = withApi(
         .select("id, company_name, job_role, job_description, job_url, location")
         .eq("status", "new")
         .order("discovered_at", { ascending: false })
-        .limit(50);
+        .limit(100);
       if (matchedIds.length > 0) {
         leadsQuery = leadsQuery.not("id", "in", `(${matchedIds.join(",")})`);
       }
       const { data: leads } = await leadsQuery;
 
-      // Cheap pre-filter by keywords if we have them
       let filteredLeads = leads || [];
-      if (keywords.size > 0) {
-        filteredLeads = filteredLeads.filter((lead) => {
-          const text = `${lead.job_role} ${lead.company_name}`.toLowerCase();
-          return Array.from(keywords).some((kw) => text.includes(kw));
-        });
-      }
 
-      // Location filter
+      // Location filter only
       if ((candidateProfile as any)?.location_preference) {
         const loc = (candidateProfile as any).location_preference.toLowerCase();
         filteredLeads = filteredLeads.filter((lead) => {
@@ -127,6 +106,7 @@ export const POST = withApi(
       }
 
       // Create steps
+      const { deep } = body;
       const steps = filteredLeads.map((lead, idx) => ({
         run_id: run.id,
         step_index: idx,
@@ -139,6 +119,7 @@ export const POST = withApi(
           job_role: lead.job_role,
           job_description: lead.job_description,
           job_url: lead.job_url,
+          deep: deep || false,
         },
       }));
 

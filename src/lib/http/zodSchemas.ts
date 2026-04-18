@@ -34,6 +34,7 @@ export const interviewPrepSchema = z.object({
 
 export const matchAgentSchema = z.object({
   student_id: z.string().uuid("Invalid student ID"),
+  deep: z.boolean().optional(),
 });
 
 export const applyAgentSchema = z.object({

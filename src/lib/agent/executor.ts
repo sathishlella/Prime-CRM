@@ -44,6 +44,7 @@ export async function executeEvaluateStep(
     job_role: string;
     job_description?: string;
     job_url?: string;
+    deep?: boolean;
   },
   requestId?: string
 ): Promise<{ ok: boolean; error?: string }> {
@@ -74,18 +75,23 @@ export async function executeEvaluateStep(
     : (rawProfiles as { full_name: string; email: string });
 
   try {
-    // Lightweight match prompt — score + grade + 3 reasons only (~80 output tokens)
+    // deep=true: use up to 2000 chars of full CV for higher-fidelity scoring
+    // default: lightweight 300-char summary (~80 output tokens)
+    const cvContent = input.deep
+      ? (candidateProfile?.cv_markdown || "").slice(0, 2000).replace(/\n+/g, " ")
+      : extractCvSummary(candidateProfile?.cv_markdown || null);
+
     const { data: match } = await callClaude<MatchResult>(
       buildMatchSystemPrompt(),
       buildMatchUserPrompt(
         candidateProfile?.skills || [],
         candidateProfile?.target_roles || [],
-        extractCvSummary(candidateProfile?.cv_markdown || null),
+        cvContent,
         input.job_role,
         input.company_name,
         input.job_description || ""
       ),
-      { feature: "match", maxTokens: 256 }
+      { feature: "match", maxTokens: input.deep ? 512 : 256 }
     );
 
     const { error } = await supabase.from("job_matches").insert({

@@ -105,12 +105,12 @@ export default function MatchClient({
     setSelectedMatchIds(new Set());
   }
 
-  async function handleMatchRun() {
+  async function handleMatchRun(deep = false) {
     setLoading(true);
     const res = await fetch("/api/agent/match", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ student_id: selectedStudentId }),
+      body: JSON.stringify({ student_id: selectedStudentId, deep }),
     });
     setLoading(false);
     if (!res.ok) {
@@ -120,7 +120,12 @@ export default function MatchClient({
     }
     const data = await res.json();
     if (data.run_id) {
-      addToast(`Match run queued: ${data.matched} jobs`, "success");
+      addToast(
+        deep
+          ? `Max Match queued: ${data.matched} jobs (full CV)`
+          : `Match run queued: ${data.matched} jobs`,
+        "success"
+      );
     } else {
       addToast(data.message || "No new leads to match", "info");
     }
@@ -184,7 +189,7 @@ export default function MatchClient({
             </div>
 
             <button
-              onClick={handleMatchRun}
+              onClick={() => handleMatchRun(false)}
               disabled={loading || !selectedStudentId}
               style={{
                 marginTop: 12,
@@ -200,7 +205,27 @@ export default function MatchClient({
                 opacity: loading || !selectedStudentId ? 0.6 : 1,
               }}
             >
-              {loading ? "Running…" : "✨ Run Match Agent"}
+              {loading ? "Running…" : "Run Match Agent"}
+            </button>
+            <button
+              onClick={() => handleMatchRun(true)}
+              disabled={loading || !selectedStudentId}
+              title="Uses full CV markdown for higher-accuracy scoring (uses more AI tokens)"
+              style={{
+                marginTop: 6,
+                width: "100%",
+                padding: "10px 0",
+                borderRadius: 12,
+                border: "1px solid rgba(16,185,129,0.35)",
+                background: "rgba(16,185,129,0.06)",
+                color: "#10b981",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: loading || !selectedStudentId ? "not-allowed" : "pointer",
+                opacity: loading || !selectedStudentId ? 0.6 : 1,
+              }}
+            >
+              {loading ? "Running…" : "Max Match (Full CV)"}
             </button>
           </div>
         </div>
