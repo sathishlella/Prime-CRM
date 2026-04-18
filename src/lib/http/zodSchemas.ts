@@ -49,18 +49,21 @@ export const chatSchema = z.object({
 
 export const keywordsSchema = z.object({
   match_id: z.string().uuid("Invalid match ID"),
+  job_description_override: z.string().max(20000).optional(),
 });
 
 export const coverLetterSchema = z.object({
   student_id: z.string().uuid("Invalid student ID"),
   match_id: z.string().uuid("Invalid match ID"),
   emphasis_keywords: z.array(z.string().min(1).max(80)).max(20).optional(),
+  job_description_override: z.string().max(20000).optional(),
 });
 
 export const tailorCvSchema = z.object({
   student_id: z.string().uuid("Invalid student ID"),
   match_id: z.string().uuid("Invalid match ID"),
   emphasis_keywords: z.array(z.string().min(1).max(80)).max(20).optional(),
+  job_description_override: z.string().max(20000).optional(),
 });
 
 export const recordApplicationSchema = z.object({

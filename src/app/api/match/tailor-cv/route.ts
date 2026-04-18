@@ -18,7 +18,7 @@ export const POST = withApi(
     rateLimit: { bucket: "ai:tailor-cv", limit: 10, windowMs: 60 * 60 * 1000 },
   },
   async ({ body, user, requestId, logger }) => {
-    const { student_id, match_id, emphasis_keywords = [] } = body;
+    const { student_id, match_id, emphasis_keywords = [], job_description_override } = body;
     const supabase = createServerClient();
 
     const { data: student } = await supabase
@@ -45,7 +45,7 @@ export const POST = withApi(
 
     const { data: match } = await supabase
       .from("job_matches")
-      .select("id, job_leads(company_name, job_role, job_description)")
+      .select("id, job_lead_id, job_leads(company_name, job_role, job_description)")
       .eq("id", match_id)
       .eq("student_id", student_id)
       .single();
@@ -88,17 +88,30 @@ export const POST = withApi(
         ? `\n\n## Keywords the counselor wants emphasized (use naturally in summary, competencies, and bullets when truthful):\n${emphasis_keywords.slice(0, 20).join(", ")}`
         : "";
 
-    logger.info("tailoring cv for match", { match_id, keywords: emphasis_keywords.length });
+    const effectiveJd = (job_description_override ?? lead.job_description ?? "").trim();
+
+    logger.info("tailoring cv for match", {
+      match_id,
+      keywords: emphasis_keywords.length,
+      jd_source: job_description_override ? "override" : lead.job_description ? "lead" : "empty",
+    });
 
     const { data: tailoringData } = await callClaude<CVTailorResult>(
       buildCVTailorSystemPrompt(),
       buildCVTailorUserPrompt(
         candidateProfile.cv_markdown,
-        (lead.job_description ?? "") + keywordDirective,
+        effectiveJd + keywordDirective,
         candidateName
       ),
       { feature: "cv-generate", maxTokens: 8192, userId: user.id, requestId }
     );
+
+    if (job_description_override && !lead.job_description && match.job_lead_id) {
+      await supabase
+        .from("job_leads")
+        .update({ job_description: job_description_override } as any)
+        .eq("id", match.job_lead_id);
+    }
 
     let html = buildHTML({
       tailoringData,
@@ -113,16 +126,21 @@ export const POST = withApi(
     const { html: normalized } = normalizeTextForATS(html);
     html = normalized;
 
-    let pdfBuffer: Buffer;
+    let pdfBuffer: Buffer | null = null;
     try {
       pdfBuffer = await generatePDFFromHTML(html, "letter");
     } catch (err) {
       logger.error("pdf generation failed — html fallback", { error: String(err) });
+    }
+
+    if (!pdfBuffer) {
       return Response.json({
+        pdf_url: null,
         html,
         tailoring_data: tailoringData,
-        error: "PDF unavailable — HTML returned",
         keyword_coverage: tailoringData.keyword_coverage,
+        keywords_used: tailoringData.keywords_used,
+        warning: "PDF unavailable — HTML returned",
       });
     }
 
@@ -144,10 +162,13 @@ export const POST = withApi(
       );
     }
 
-    const { data: urlData } = await admin.storage
+    const { data: urlData, error: urlError } = await admin.storage
       .from("generated-cvs")
       .createSignedUrl(storagePath, 3600);
-    const pdfUrl = urlData?.signedUrl || "";
+    if (urlError) {
+      logger.error("signed url failed", { error: urlError.message });
+    }
+    const pdfUrl = urlData?.signedUrl || null;
     const pdfString = pdfBuffer.toString("latin1");
     const pageCount = (pdfString.match(/\/Type\s*\/Page[^s]/g) || []).length;
 
@@ -158,7 +179,7 @@ export const POST = withApi(
         student_id,
         company_name: lead.company_name,
         job_role: lead.job_role,
-        pdf_url: pdfUrl,
+        pdf_url: pdfUrl ?? "",
         pdf_path: storagePath,
         content: tailoringData as unknown as Record<string, unknown>,
         keyword_coverage: tailoringData.keyword_coverage,
@@ -171,6 +192,7 @@ export const POST = withApi(
 
     return Response.json({
       pdf_url: pdfUrl,
+      html,
       cv_id: cvRecord?.id,
       page_count: pageCount,
       keyword_coverage: tailoringData.keyword_coverage,

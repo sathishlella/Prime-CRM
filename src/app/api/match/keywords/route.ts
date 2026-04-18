@@ -17,7 +17,7 @@ export const POST = withApi(
     rateLimit: { bucket: "ai:keywords", limit: 30, windowMs: 60 * 60 * 1000 },
   },
   async ({ body, user, requestId, logger }) => {
-    const { match_id } = body;
+    const { match_id, job_description_override } = body;
     const supabase = createServerClient();
 
     const { data: match } = await supabase
@@ -58,19 +58,22 @@ export const POST = withApi(
       );
     }
 
-    const cached =
-      match.match_reasoning && typeof match.match_reasoning === "object"
-        ? (match.match_reasoning as Record<string, unknown>).keywords
-        : null;
-    if (cached && typeof cached === "object") {
-      const c = cached as Partial<KeywordsResult>;
-      if (
-        Array.isArray(c.matched_keywords) &&
-        Array.isArray(c.gap_keywords) &&
-        Array.isArray(c.suggested_emphasis)
-      ) {
-        logger.info("keywords cache hit", { match_id });
-        return Response.json({ ...c, cached: true });
+    // Cache only valid when no override (paste-JD) is provided
+    if (!job_description_override) {
+      const cached =
+        match.match_reasoning && typeof match.match_reasoning === "object"
+          ? (match.match_reasoning as Record<string, unknown>).keywords
+          : null;
+      if (cached && typeof cached === "object") {
+        const c = cached as Partial<KeywordsResult>;
+        if (
+          Array.isArray(c.matched_keywords) &&
+          Array.isArray(c.gap_keywords) &&
+          Array.isArray(c.suggested_emphasis)
+        ) {
+          logger.info("keywords cache hit", { match_id });
+          return Response.json({ ...c, cached: true });
+        }
       }
     }
 
@@ -89,6 +92,8 @@ export const POST = withApi(
 
     logger.info("extracting keywords", { match_id });
 
+    const effectiveJd = (job_description_override ?? lead.job_description ?? "").trim();
+
     const result = await aiJson<KeywordsResult>({
       feature: "pattern-analysis",
       system: buildKeywordsSystemPrompt(),
@@ -96,17 +101,28 @@ export const POST = withApi(
         candidateProfile.cv_markdown,
         lead.job_role,
         lead.company_name,
-        lead.job_description ?? ""
+        effectiveJd
       ),
       userId: user.id,
       requestId,
     });
 
-    const prior = (match.match_reasoning as Record<string, unknown>) ?? {};
-    await supabase
-      .from("job_matches")
-      .update({ match_reasoning: { ...prior, keywords: result.data } })
-      .eq("id", match_id);
+    // Only cache when using the canonical job_description (no override)
+    if (!job_description_override) {
+      const prior = (match.match_reasoning as Record<string, unknown>) ?? {};
+      await supabase
+        .from("job_matches")
+        .update({ match_reasoning: { ...prior, keywords: result.data } })
+        .eq("id", match_id);
+    }
+
+    // If caller supplied a JD override, save it on the lead so it's reused later
+    if (job_description_override && !lead.job_description) {
+      await supabase
+        .from("job_leads")
+        .update({ job_description: job_description_override } as any)
+        .eq("id", match.job_lead_id);
+    }
 
     return Response.json({ ...result.data, cached: false });
   }

@@ -54,12 +54,20 @@ export default function MatchDetailClient({
     new Set(cachedKeywords?.suggested_emphasis ?? [])
   );
   const [loadingKw, setLoadingKw] = useState(false);
-  const [cvResult, setCvResult] = useState<{ pdf_url: string; keyword_coverage: number } | null>(null);
+  const [cvResult, setCvResult] = useState<{
+    pdf_url: string | null;
+    html?: string;
+    keyword_coverage: number;
+  } | null>(null);
   const [letterResult, setLetterResult] = useState<{ markdown: string } | null>(null);
   const [generatingCv, setGeneratingCv] = useState(false);
   const [generatingLetter, setGeneratingLetter] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [pastedJd, setPastedJd] = useState("");
   const { addToast } = useUIStore();
+
+  const jdOverride = pastedJd.trim().length > 40 ? pastedJd.trim() : undefined;
+  const effectiveJdPresent = Boolean(job.job_description || jdOverride);
 
   const color = GRADE_COLOR(match.grade);
 
@@ -69,7 +77,10 @@ export default function MatchDetailClient({
       const res = await fetch("/api/match/keywords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ match_id: matchId }),
+        body: JSON.stringify({
+          match_id: matchId,
+          job_description_override: jdOverride,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -82,7 +93,9 @@ export default function MatchDetailClient({
         suggested_emphasis: data.suggested_emphasis ?? [],
       };
       setKw(next);
-      setSelected(new Set(next.suggested_emphasis ?? []));
+      setSelected((prev) =>
+        prev.size > 0 ? prev : new Set(next.suggested_emphasis ?? [])
+      );
     } finally {
       setLoadingKw(false);
     }
@@ -107,6 +120,7 @@ export default function MatchDetailClient({
           student_id: studentId,
           match_id: matchId,
           emphasis_keywords: Array.from(selected),
+          job_description_override: jdOverride,
         }),
       });
       const data = await res.json();
@@ -115,10 +129,14 @@ export default function MatchDetailClient({
         return;
       }
       setCvResult({
-        pdf_url: data.pdf_url,
+        pdf_url: data.pdf_url ?? null,
+        html: data.html,
         keyword_coverage: data.keyword_coverage ?? 0,
       });
-      addToast("Tailored CV generated", "success");
+      addToast(
+        data.pdf_url ? "Tailored CV generated" : "CV ready — HTML preview only (PDF unavailable)",
+        "success"
+      );
     } finally {
       setGeneratingCv(false);
     }
@@ -134,6 +152,7 @@ export default function MatchDetailClient({
           student_id: studentId,
           match_id: matchId,
           emphasis_keywords: Array.from(selected),
+          job_description_override: jdOverride,
         }),
       });
       const data = await res.json();
@@ -175,7 +194,17 @@ export default function MatchDetailClient({
     }
   }
 
-  const canProceed = cvResult !== null && letterResult !== null;
+  const canProceed = cvResult !== null;
+
+  function openHtmlPreview() {
+    if (!cvResult?.html) return;
+    const win = window.open("", "_blank", "noopener,noreferrer");
+    if (win) {
+      win.document.open();
+      win.document.write(cvResult.html);
+      win.document.close();
+    }
+  }
 
   return (
     <div>
@@ -259,18 +288,50 @@ export default function MatchDetailClient({
         <div>
           {/* Job description */}
           <Section title="Job Description">
-            <div
-              style={{
-                fontSize: 12.5,
-                lineHeight: 1.65,
-                color: "#334155",
-                whiteSpace: "pre-wrap",
-                maxHeight: 260,
-                overflow: "auto",
-              }}
-            >
-              {job.job_description || "No description on file for this lead."}
-            </div>
+            {job.job_description ? (
+              <div
+                style={{
+                  fontSize: 12.5,
+                  lineHeight: 1.65,
+                  color: "#334155",
+                  whiteSpace: "pre-wrap",
+                  maxHeight: 260,
+                  overflow: "auto",
+                }}
+              >
+                {job.job_description}
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8, lineHeight: 1.55 }}>
+                  No description on file — scanner only caught the title. Paste the full JD from the
+                  company posting for sharper keywords and a better CV.
+                </div>
+                <textarea
+                  value={pastedJd}
+                  onChange={(e) => setPastedJd(e.target.value)}
+                  placeholder="Paste the full job description here (40+ chars to enable generation)…"
+                  rows={8}
+                  style={{
+                    width: "100%",
+                    borderRadius: 10,
+                    border: "1px solid rgba(0,0,0,0.1)",
+                    background: "rgba(255,255,255,0.7)",
+                    padding: 10,
+                    fontSize: 12.5,
+                    lineHeight: 1.55,
+                    color: "#1e293b",
+                    fontFamily: "inherit",
+                    resize: "vertical",
+                  }}
+                />
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
+                  {jdOverride
+                    ? `✓ Using pasted JD (${pastedJd.trim().length} chars). Saved to this lead on first AI call.`
+                    : `${pastedJd.trim().length}/40 chars minimum`}
+                </div>
+              </div>
+            )}
             {job.job_url && (
               <a
                 href={job.job_url}
@@ -304,7 +365,7 @@ export default function MatchDetailClient({
               <div style={{ textAlign: "center", padding: "12px 0" }}>
                 <button
                   onClick={fetchKeywords}
-                  disabled={loadingKw}
+                  disabled={loadingKw || !effectiveJdPresent}
                   style={{
                     padding: "10px 16px",
                     borderRadius: 10,
@@ -313,13 +374,17 @@ export default function MatchDetailClient({
                     color: "#0A6EBD",
                     fontSize: 13,
                     fontWeight: 700,
-                    cursor: loadingKw ? "wait" : "pointer",
+                    cursor: loadingKw ? "wait" : !effectiveJdPresent ? "not-allowed" : "pointer",
+                    opacity: !effectiveJdPresent ? 0.55 : 1,
                   }}
+                  title={!effectiveJdPresent ? "Paste a job description first" : undefined}
                 >
                   {loadingKw ? "Analyzing CV vs JD…" : "Extract matched keywords"}
                 </button>
                 <div style={{ fontSize: 11.5, color: "#94a3b8", marginTop: 8 }}>
-                  Choose which keywords to emphasize in the tailored CV + cover letter.
+                  {effectiveJdPresent
+                    ? "Choose which keywords to emphasize in the tailored CV + cover letter."
+                    : "Paste the job description above to unlock keyword extraction."}
                 </div>
               </div>
             )}
@@ -418,15 +483,40 @@ export default function MatchDetailClient({
                   flexWrap: "wrap",
                 }}
               >
-                <span style={{ fontWeight: 700 }}>CV ready · {cvResult.keyword_coverage}% keyword coverage</span>
-                <a
-                  href={cvResult.pdf_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: "#047857", fontWeight: 700, textDecoration: "underline" }}
-                >
-                  Open PDF ↗
-                </a>
+                <span style={{ fontWeight: 700 }}>
+                  CV ready · {cvResult.keyword_coverage}% keyword coverage
+                </span>
+                {cvResult.pdf_url ? (
+                  <a
+                    href={cvResult.pdf_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: "#047857", fontWeight: 700, textDecoration: "underline" }}
+                  >
+                    Open PDF ↗
+                  </a>
+                ) : cvResult.html ? (
+                  <button
+                    type="button"
+                    onClick={openHtmlPreview}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(16,185,129,0.4)",
+                      background: "rgba(16,185,129,0.15)",
+                      color: "#047857",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Preview HTML ↗
+                  </button>
+                ) : (
+                  <span style={{ fontSize: 11.5, color: "#b45309" }}>
+                    PDF unavailable — try regenerating
+                  </span>
+                )}
               </div>
             )}
             {letterResult && (
@@ -475,7 +565,7 @@ export default function MatchDetailClient({
                 letterSpacing: 0.2,
                 transition: "all 0.22s",
               }}
-              title={!canProceed ? "Generate CV and cover letter first" : "Record + open apply page"}
+              title={!canProceed ? "Generate the tailored CV first" : "Record + open apply page"}
             >
               {recording ? "Recording…" : canProceed ? "Next: Apply →" : "Next: Apply →"}
             </button>

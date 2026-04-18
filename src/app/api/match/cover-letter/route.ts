@@ -18,7 +18,7 @@ export const POST = withApi(
     rateLimit: { bucket: "ai:cover-letter", limit: 20, windowMs: 60 * 60 * 1000 },
   },
   async ({ body, user, requestId, logger }) => {
-    const { student_id, match_id, emphasis_keywords = [] } = body;
+    const { student_id, match_id, emphasis_keywords = [], job_description_override } = body;
     const supabase = createServerClient();
 
     const { data: student } = await supabase
@@ -84,7 +84,13 @@ export const POST = withApi(
     const candidateName =
       (profile as { full_name?: string } | null)?.full_name ?? "Candidate";
 
-    logger.info("generating cover letter", { match_id, keywords: emphasis_keywords.length });
+    const effectiveJd = (job_description_override ?? lead.job_description ?? "").trim();
+
+    logger.info("generating cover letter", {
+      match_id,
+      keywords: emphasis_keywords.length,
+      jd_source: job_description_override ? "override" : lead.job_description ? "lead" : "empty",
+    });
 
     const result = await aiJson<CoverLetterResult>({
       feature: "cv-generate",
@@ -94,7 +100,7 @@ export const POST = withApi(
         candidateName,
         lead.job_role,
         lead.company_name,
-        lead.job_description ?? "",
+        effectiveJd,
         emphasis_keywords
       ),
       userId: user.id,
