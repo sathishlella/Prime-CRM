@@ -1,61 +1,24 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { matchesFilters } from "./filters";
-import { DEFAULT_TRACKED_COMPANIES, DEFAULT_TITLE_FILTERS } from "./portals-config";
-
-const US_LOCATION_KEYWORDS = [
-  "united states", "usa", "u.s.a", "u.s.",
-  "remote", // all companies in list are US-based, so remote = US remote
-  // US states
-  "alabama","alaska","arizona","arkansas","california","colorado","connecticut",
-  "delaware","florida","georgia","hawaii","idaho","illinois","indiana","iowa",
-  "kansas","kentucky","louisiana","maine","maryland","massachusetts","michigan",
-  "minnesota","mississippi","missouri","montana","nebraska","nevada",
-  "new hampshire","new jersey","new mexico","new york","north carolina",
-  "north dakota","ohio","oklahoma","oregon","pennsylvania","rhode island",
-  "south carolina","south dakota","tennessee","texas","utah","vermont",
-  "virginia","washington","west virginia","wisconsin","wyoming",
-  // state abbreviations and major cities
-  " ca,"," ny,"," tx,"," wa,"," il,"," fl,"," co,"," ma,"," ga,"," nc,",
-  "san francisco","san jose","new york","los angeles","seattle","chicago",
-  "austin","boston","denver","atlanta","miami","brooklyn","san diego",
-  "menlo park","mountain view","palo alto","redwood city","sunnyvale",
-  "cupertino","bellevue","kirkland","cambridge",
-];
-
-const NON_US_KEYWORDS = [
-  "canada","toronto","vancouver","montreal","calgary",
-  "united kingdom","london","manchester","edinburgh",
-  "germany","berlin","munich","frankfurt",
-  "france","paris",
-  "india","bangalore","hyderabad","pune","mumbai","chennai",
-  "australia","sydney","melbourne",
-  "singapore","japan","tokyo","china","beijing","shanghai",
-  "brazil","mexico","netherlands","amsterdam",
-  "ireland","dublin","sweden","stockholm",
-];
-
-function isUSLocation(location: string | null | undefined): boolean {
-  if (!location || location.trim() === "") return true; // no location = don't filter out
-  const loc = location.toLowerCase();
-  if (NON_US_KEYWORDS.some((kw) => loc.includes(kw))) return false;
-  if (US_LOCATION_KEYWORDS.some((kw) => loc.includes(kw.trim()))) return true;
-  // If we can't determine, keep it (better to over-include than miss US jobs)
-  return true;
-}
+import {
+  DEFAULT_TITLE_FILTERS,
+  GREENHOUSE_COMPANIES,
+  LEVER_COMPANIES,
+} from "./portals-config";
+import { scanGreenhouse } from "./sources/greenhouse";
+import { scanLever } from "./sources/lever";
+import { scanRemotive, type ScannedJob } from "./sources/remotive";
+import { scanAdzuna } from "./sources/adzuna";
 
 interface ScanResult {
   leads_found: number;
   leads_new: number;
   leads_filtered: number;
   leads_duplicate: number;
+  by_source: Record<string, number>;
 }
 
-interface JobListing {
-  company_name: string;
-  job_title: string;
-  job_url: string;
-  source_portal: string;
-}
+const FRESHNESS_HOURS = Number(process.env.SCANNER_FRESHNESS_HOURS || 24);
 
 export async function scanPortals(
   supabase: SupabaseClient
@@ -65,96 +28,39 @@ export async function scanPortals(
     leads_new: 0,
     leads_filtered: 0,
     leads_duplicate: 0,
+    by_source: {},
   };
 
-  // Load scanner config from DB or use defaults
   const { data: configRows } = await supabase
     .from("scanner_config")
     .select("*")
     .eq("is_enabled", true);
 
-  const trackedCompanies =
-    configRows
-      ?.filter((c) => c.config_type === "tracked_company")
-      .map((c) => c.config_data as { name: string; careers_url: string; api_slug?: string }) ||
-    DEFAULT_TRACKED_COMPANIES;
-
   const titleFilters =
-    configRows?.find((c) => c.config_type === "title_filter")?.config_data as {
+    (configRows?.find((c) => c.config_type === "title_filter")?.config_data as {
       positive: string[];
       negative: string[];
-    } || DEFAULT_TITLE_FILTERS;
+    }) || DEFAULT_TITLE_FILTERS;
 
-  // Level 2: Greenhouse API (most reliable)
-  const greenhouseCompanies = trackedCompanies.filter((c) => c.api_slug);
-  for (const company of greenhouseCompanies) {
-    try {
-      const response = await fetch(
-        `https://boards-api.greenhouse.io/v1/boards/${company.api_slug}/jobs`
-      );
-      if (!response.ok) continue;
+  // Run all sources in parallel — they're independent HTTP calls.
+  const [ghJobs, leverJobs, remotiveJobs, adzunaJobs] = await Promise.all([
+    scanGreenhouse(GREENHOUSE_COMPANIES, FRESHNESS_HOURS).catch(() => [] as ScannedJob[]),
+    scanLever(LEVER_COMPANIES, FRESHNESS_HOURS).catch(() => [] as ScannedJob[]),
+    scanRemotive(FRESHNESS_HOURS).catch(() => [] as ScannedJob[]),
+    scanAdzuna(FRESHNESS_HOURS).catch(() => [] as ScannedJob[]),
+  ]);
 
-      const data = await response.json();
-      const jobs = data.jobs || [];
+  const allJobs = [...ghJobs, ...leverJobs, ...remotiveJobs, ...adzunaJobs];
+  results.by_source = {
+    greenhouse: ghJobs.length,
+    lever: leverJobs.length,
+    remotive: remotiveJobs.length,
+    adzuna: adzunaJobs.length,
+  };
 
-      for (const job of jobs) {
-        // USA-only filter using Greenhouse location field
-        const locationName = job.location?.name as string | undefined;
-        if (!isUSLocation(locationName)) {
-          results.leads_filtered++;
-          continue;
-        }
-
-        const listing: JobListing = {
-          company_name: company.name,
-          job_title: job.title,
-          job_url: job.absolute_url,
-          source_portal: "greenhouse",
-        };
-
-        results.leads_found++;
-        await processListing(supabase, listing, titleFilters, results);
-      }
-    } catch {
-      // Skip failed companies
-    }
-  }
-
-  // Level 1: Direct career page fetch (HTML parsing)
-  const directCompanies = trackedCompanies.filter(
-    (c) => !c.api_slug && c.careers_url
-  );
-  for (const company of directCompanies) {
-    try {
-      const response = await fetch(company.careers_url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; PrimeCRM/1.0)" },
-      });
-      if (!response.ok) continue;
-
-      const html = await response.text();
-
-      // Extract job links using regex patterns for common job board HTML
-      const jobPattern =
-        /<a[^>]*href=["']([^"']*(?:job|career|position|opening)[^"']*)["'][^>]*>([^<]+)<\/a>/gi;
-      let match;
-      while ((match = jobPattern.exec(html)) !== null) {
-        const url = match[1].startsWith("http")
-          ? match[1]
-          : new URL(match[1], company.careers_url).href;
-
-        const listing: JobListing = {
-          company_name: company.name,
-          job_title: match[2].trim(),
-          job_url: url,
-          source_portal: "careers_page",
-        };
-
-        results.leads_found++;
-        await processListing(supabase, listing, titleFilters, results);
-      }
-    } catch {
-      // Skip failed companies
-    }
+  for (const job of allJobs) {
+    results.leads_found++;
+    await processListing(supabase, job, titleFilters, results);
   }
 
   return results;
@@ -162,15 +68,12 @@ export async function scanPortals(
 
 async function processListing(
   supabase: SupabaseClient,
-  listing: JobListing,
+  listing: ScannedJob,
   titleFilters: { positive: string[]; negative: string[] },
   results: ScanResult
 ) {
-  // Check title filter
   if (!matchesFilters(listing.job_title, titleFilters)) {
     results.leads_filtered++;
-
-    // Record in scan_history
     await supabase
       .from("scan_history")
       .upsert(
@@ -184,11 +87,9 @@ async function processListing(
         { onConflict: "job_url" }
       )
       .select();
-
     return;
   }
 
-  // Check for duplicate
   const { data: existing } = await supabase
     .from("scan_history")
     .select("id")
@@ -200,15 +101,20 @@ async function processListing(
     return;
   }
 
-  // Add to job_leads
+  // lead_source enum allows: greenhouse, ashby, lever, workday, direct, other.
+  // Migration 004 adds remotive + adzuna. Until applied, coerce unknown → 'other'.
+  const ENUM_SOURCES = new Set(["greenhouse","ashby","lever","workday","direct","other","remotive","adzuna"]);
+  const safeSource = ENUM_SOURCES.has(listing.source_portal) ? listing.source_portal : "other";
+
   await supabase.from("job_leads").insert({
     company_name: listing.company_name,
     job_role: listing.job_title,
     job_url: listing.job_url,
-    source: listing.source_portal,
+    source: safeSource,
+    location: listing.location,
+    job_description: listing.job_description || null,
   });
 
-  // Record in scan_history
   await supabase.from("scan_history").insert({
     job_url: listing.job_url,
     job_title: listing.job_title,
